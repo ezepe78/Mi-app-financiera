@@ -1,0 +1,5 @@
+{
+  "name": "Mi App Financiera",
+  "description": "Gestor de finanzas personales offline-first con IndexedDB",
+  "requestFramePermissions": []
+}

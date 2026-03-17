@@ -1,0 +1,127 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: accounts
+    // Fields: id, uid, name, type, initialBalance, createdAt
+    //
+    // Collection: categories
+    // Fields: id, uid, name, type
+    //
+    // Collection: transactions
+    // Fields: id, uid, type, description, amount, accountId, categoryId, issueDate, dueDate, completed, note, linkedTransactionId
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.uid;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "ezepedrosa@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidAccount(data) {
+      return hasRequiredFields(['id', 'uid', 'name', 'type', 'initialBalance', 'createdAt']) &&
+             hasOnlyAllowedFields(['id', 'uid', 'name', 'type', 'initialBalance', 'createdAt']) &&
+             data.id is string &&
+             data.uid == request.auth.uid &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.type in ['cash', 'bank', 'wallet'] &&
+             data.initialBalance is number &&
+             data.createdAt is string;
+    }
+
+    function isValidCategory(data) {
+      return hasRequiredFields(['id', 'uid', 'name', 'type']) &&
+             hasOnlyAllowedFields(['id', 'uid', 'name', 'type']) &&
+             data.id is string &&
+             data.uid == request.auth.uid &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 50 &&
+             data.type in ['income', 'expense'];
+    }
+
+    function isValidTransaction(data) {
+      return hasRequiredFields(['id', 'uid', 'type', 'description', 'amount', 'accountId', 'categoryId', 'issueDate', 'dueDate', 'completed']) &&
+             hasOnlyAllowedFields(['id', 'uid', 'type', 'description', 'amount', 'accountId', 'categoryId', 'issueDate', 'dueDate', 'completed', 'note', 'linkedTransactionId']) &&
+             data.id is string &&
+             data.uid == request.auth.uid &&
+             data.type in ['income', 'expense', 'transfer'] &&
+             data.description is string && data.description.size() > 0 && data.description.size() < 200 &&
+             data.amount is number &&
+             data.accountId is string &&
+             data.categoryId is string &&
+             data.issueDate is string &&
+             data.dueDate is string &&
+             data.completed is bool &&
+             (!('note' in data) || (data.note is string && data.note.size() < 1000)) &&
+             (!('linkedTransactionId' in data) || data.linkedTransactionId is string);
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /accounts/{accountId} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isAuthenticated() && isValidAccount(request.resource.data);
+      allow update: if isDocOwner() && isValidAccount(request.resource.data) && request.resource.data.uid == resource.data.uid;
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /categories/{categoryId} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isAuthenticated() && isValidCategory(request.resource.data);
+      allow update: if isDocOwner() && isValidCategory(request.resource.data) && request.resource.data.uid == resource.data.uid;
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /transactions/{transactionId} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isAuthenticated() && isValidTransaction(request.resource.data);
+      allow update: if isDocOwner() && isValidTransaction(request.resource.data) && request.resource.data.uid == resource.data.uid;
+      allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isAuthenticated() && request.resource.data.uid == request.auth.uid && request.resource.data.role == 'user';
+      allow update: if isOwner(userId) && request.resource.data.role == resource.data.role; // Cannot change own role
+      allow delete: if isAdmin();
+    }
+
+    // Default deny
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}

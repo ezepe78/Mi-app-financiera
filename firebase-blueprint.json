@@ -1,0 +1,64 @@
+{
+  "entities": {
+    "Account": {
+      "title": "Account",
+      "description": "A financial account like a bank, cash or wallet",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "type": { "type": "string", "enum": ["cash", "bank", "wallet"] },
+        "initialBalance": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "uid", "name", "type", "initialBalance", "createdAt"]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "A category for transactions",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "type": { "type": "string", "enum": ["income", "expense"] }
+      },
+      "required": ["id", "uid", "name", "type"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "A financial transaction",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "uid": { "type": "string" },
+        "type": { "type": "string", "enum": ["income", "expense", "transfer"] },
+        "description": { "type": "string" },
+        "amount": { "type": "number" },
+        "accountId": { "type": "string" },
+        "categoryId": { "type": "string" },
+        "issueDate": { "type": "string", "format": "date" },
+        "dueDate": { "type": "string", "format": "date" },
+        "completed": { "type": "boolean" },
+        "note": { "type": "string" },
+        "linkedTransactionId": { "type": "string" }
+      },
+      "required": ["id", "uid", "type", "description", "amount", "accountId", "categoryId", "issueDate", "dueDate", "completed"]
+    }
+  },
+  "firestore": {
+    "accounts": {
+      "schema": "Account",
+      "description": "Collection of user accounts"
+    },
+    "categories": {
+      "schema": "Category",
+      "description": "Collection of user categories"
+    },
+    "transactions": {
+      "schema": "Transaction",
+      "description": "Collection of user transactions"
+    }
+  }
+}
