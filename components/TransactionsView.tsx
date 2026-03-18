@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { Account, Category, Transaction } from '@/hooks/useFinanceData';
 import { format, parseISO, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
-import { Search, Filter, Trash2, Edit2, X } from 'lucide-react';
+import { Search, Filter, Trash2, Edit2, X, Check } from 'lucide-react';
 import { NewTransactionButton } from './NewTransactionButton';
 import { TransactionModal } from './TransactionModal';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface TransactionsViewProps {
   transactions: Transaction[];
@@ -71,6 +72,11 @@ export function TransactionsView({ transactions, accounts, categories, onAdd, on
 
         // Account filter
         if (selectedAccount && tx.accountId !== selectedAccount) {
+          return false;
+        }
+
+        // Unify transfers: if no account filter, only show the "out" part (amount < 0)
+        if (!selectedAccount && tx.type === 'transfer' && tx.amount > 0 && tx.linkedTransactionId) {
           return false;
         }
 
@@ -152,55 +158,147 @@ export function TransactionsView({ transactions, accounts, categories, onAdd, on
             </div>
           </div>
 
-          {/* Expanded Filters Panel */}
-          {showFilters && (
-            <div className="mt-4 pt-4 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-in fade-in slide-in-from-top-2 duration-200">
-              <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Desde</label>
-                <input 
-                  type="date" 
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 outline-none"
+          {/* Expanded Filters Panel - Desktop only or hidden if modal is used */}
+          <AnimatePresence>
+            {showFilters && (
+              <div className="fixed inset-0 z-[400] flex items-end sm:items-center justify-center p-0 sm:p-4">
+                {/* Backdrop */}
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => setShowFilters(false)}
+                  className="absolute inset-0 bg-black/40 backdrop-blur-sm"
                 />
-              </div>
-              <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Hasta</label>
-                <input 
-                  type="date" 
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Categoría</label>
-                <select 
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                
+                {/* Modal Content */}
+                <motion.div 
+                  initial={{ y: "100%" }}
+                  animate={{ y: 0 }}
+                  exit={{ y: "100%" }}
+                  transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                  className="relative bg-white w-full sm:max-w-lg rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
                 >
-                  <option value="">Todas las categorías</option>
-                  {categories.map(c => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
+                  <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+                    <div>
+                      <h2 className="text-xl font-bold text-gray-900">Filtros</h2>
+                      <p className="text-xs text-gray-500">Refina tu búsqueda de transacciones</p>
+                    </div>
+                    <button 
+                      onClick={() => setShowFilters(false)}
+                      className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                    >
+                      <X className="w-6 h-6 text-gray-400" />
+                    </button>
+                  </div>
+
+                  <div className="p-6 space-y-6 overflow-y-auto">
+                    {/* Date Range */}
+                    <div className="space-y-3">
+                      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Rango de fechas</h3>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[10px] text-gray-500 mb-1 ml-1">Desde</label>
+                          <input 
+                            type="date" 
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                            className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50/50"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] text-gray-500 mb-1 ml-1">Hasta</label>
+                          <input 
+                            type="date" 
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                            className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50/50"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Category Selection */}
+                    <div className="space-y-3">
+                      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Categoría</h3>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() => setSelectedCategory('')}
+                          className={`px-4 py-2 rounded-full text-xs font-bold transition-all border ${
+                            selectedCategory === '' 
+                              ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-600/20' 
+                              : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+                          }`}
+                        >
+                          Todas
+                        </button>
+                        {categories.map(c => (
+                          <button
+                            key={c.id}
+                            onClick={() => setSelectedCategory(c.id)}
+                            className={`px-4 py-2 rounded-full text-xs font-bold transition-all border ${
+                              selectedCategory === c.id 
+                                ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-600/20' 
+                                : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+                            }`}
+                          >
+                            {c.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Account Selection */}
+                    <div className="space-y-3">
+                      <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Cuenta</h3>
+                      <div className="grid grid-cols-1 gap-2">
+                        <button
+                          onClick={() => setSelectedAccount('')}
+                          className={`flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-bold transition-all border ${
+                            selectedAccount === '' 
+                              ? 'bg-blue-50 text-blue-700 border-blue-200' 
+                              : 'bg-white text-gray-600 border-gray-200'
+                          }`}
+                        >
+                          Todas las cuentas
+                          {selectedAccount === '' && <Check className="w-4 h-4" />}
+                        </button>
+                        {accounts.map(a => (
+                          <button
+                            key={a.id}
+                            onClick={() => setSelectedAccount(a.id)}
+                            className={`flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-bold transition-all border ${
+                              selectedAccount === a.id 
+                                ? 'bg-blue-50 text-blue-700 border-blue-200' 
+                                : 'bg-white text-gray-600 border-gray-200'
+                            }`}
+                          >
+                            {a.name}
+                            {selectedAccount === a.id && <Check className="w-4 h-4" />}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-6 bg-gray-50 border-t border-gray-100 flex gap-3">
+                    <button 
+                      onClick={resetFilters}
+                      className="flex-1 py-4 text-sm font-bold text-gray-500 hover:text-gray-700 transition-colors"
+                    >
+                      Limpiar todo
+                    </button>
+                    <button 
+                      onClick={() => setShowFilters(false)}
+                      className="flex-[2] py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20"
+                    >
+                      Aplicar filtros
+                    </button>
+                  </div>
+                </motion.div>
               </div>
-              <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Cuenta</label>
-                <select 
-                  value={selectedAccount}
-                  onChange={(e) => setSelectedAccount(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 outline-none bg-white"
-                >
-                  <option value="">Todas las cuentas</option>
-                  {accounts.map(a => (
-                    <option key={a.id} value={a.id}>{a.name}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          )}
+            )}
+          </AnimatePresence>
         </div>
 
         <div className="divide-y divide-gray-100">
@@ -225,18 +323,42 @@ export function TransactionsView({ transactions, accounts, categories, onAdd, on
               const category = categories.find(c => c.id === tx.categoryId);
               const account = accounts.find(a => a.id === tx.accountId);
               const isIncome = tx.type === 'income' || (tx.type === 'transfer' && tx.amount > 0);
-              const txTypeLabel = tx.type === 'transfer' ? 'Transferencia' : (tx.type === 'income' ? 'Ingreso' : 'Gasto');
+              const isTransfer = tx.type === 'transfer';
+              const txTypeLabel = isTransfer ? 'Transferencia' : (tx.type === 'income' ? 'Ingreso' : 'Gasto');
               
+              // Find linked account for transfers
+              let transferDetail = null;
+              if (isTransfer && tx.linkedTransactionId) {
+                const linkedTx = transactions.find(t => t.id === tx.linkedTransactionId);
+                if (linkedTx) {
+                  const linkedAccount = accounts.find(a => a.id === linkedTx.accountId);
+                  if (linkedAccount) {
+                    const fromAccount = tx.amount < 0 ? account?.name : linkedAccount.name;
+                    const toAccount = tx.amount < 0 ? linkedAccount.name : account?.name;
+                    transferDetail = `Desde ${fromAccount} hacia ${toAccount}`;
+                  }
+                }
+              }
+
               return (
                 <div key={tx.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between hover:bg-gray-50 transition-colors group gap-4">
                   <div className="flex items-center gap-4">
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
-                      isIncome ? "bg-emerald-50 text-emerald-600" : "bg-orange-50 text-orange-600"
+                      isTransfer 
+                        ? "bg-blue-50 text-blue-600" 
+                        : isIncome 
+                          ? "bg-emerald-50 text-emerald-600" 
+                          : "bg-orange-50 text-orange-600"
                     }`}>
-                      <span className="font-bold text-lg">{isIncome ? '+' : '-'}</span>
+                      <span className="font-bold text-lg">{isTransfer ? '⇄' : (isIncome ? '+' : '-')}</span>
                     </div>
                     <div className="min-w-0">
                       <p className="font-bold text-gray-900 truncate">{tx.description}</p>
+                      {transferDetail && (
+                        <p className="text-[10px] font-bold text-blue-600 uppercase tracking-tight mb-0.5">
+                          {transferDetail}
+                        </p>
+                      )}
                       <p className="text-xs text-gray-500 truncate">
                         {txTypeLabel} • {category?.name || 'Sin categoría'} • {account?.name}
                       </p>
@@ -244,8 +366,14 @@ export function TransactionsView({ transactions, accounts, categories, onAdd, on
                   </div>
                   <div className="flex items-center justify-between sm:justify-end gap-6">
                     <div className="text-left sm:text-right">
-                      <p className={`font-mono font-bold ${isIncome ? "text-emerald-600" : "text-gray-900"}`}>
-                        {isIncome ? '+' : '-'}${Math.abs(tx.amount).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      <p className={`font-mono font-bold ${
+                        isTransfer 
+                          ? "text-blue-600" 
+                          : isIncome 
+                            ? "text-emerald-600" 
+                            : "text-gray-900"
+                      }`}>
+                        {isTransfer ? '' : (isIncome ? '+' : '-')}${Math.abs(tx.amount).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </p>
                       <p className="text-xs text-gray-500">{format(parseISO(tx.issueDate), 'dd MMM, yyyy')}</p>
                     </div>
