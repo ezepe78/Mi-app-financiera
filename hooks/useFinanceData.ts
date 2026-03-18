@@ -12,6 +12,7 @@ import {
 import { db, auth, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { useAuth } from '@/components/FirebaseProvider';
 import { v4 as uuidv4 } from 'uuid';
+import { toast } from 'sonner';
 
 export type AccountType = 'cash' | 'bank' | 'wallet';
 export type CategoryType = 'income' | 'expense';
@@ -193,24 +194,30 @@ export function useFinanceData() {
     };
     try {
       await setDoc(doc(db, 'accounts', id), newAccount);
+      toast.success('Cuenta creada correctamente');
     } catch (error) {
-      handleFirestoreError(error, OperationType.CREATE, `accounts/${id}`);
+      const finalError = handleFirestoreError(error, OperationType.CREATE, `accounts/${id}`);
+      toast.error(finalError.message);
     }
   };
 
   const updateAccount = async (account: Account) => {
     try {
       await setDoc(doc(db, 'accounts', account.id), account);
+      toast.success('Cuenta actualizada correctamente');
     } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, `accounts/${account.id}`);
+      const finalError = handleFirestoreError(error, OperationType.UPDATE, `accounts/${account.id}`);
+      toast.error(finalError.message);
     }
   };
 
   const deleteAccount = async (id: string) => {
     try {
       await deleteDoc(doc(db, 'accounts', id));
+      toast.success('Cuenta eliminada correctamente');
     } catch (error) {
-      handleFirestoreError(error, OperationType.DELETE, `accounts/${id}`);
+      const finalError = handleFirestoreError(error, OperationType.DELETE, `accounts/${id}`);
+      toast.error(finalError.message);
     }
   };
 
@@ -224,24 +231,30 @@ export function useFinanceData() {
     };
     try {
       await setDoc(doc(db, 'categories', id), newCategory);
+      toast.success('Categoría creada correctamente');
     } catch (error) {
-      handleFirestoreError(error, OperationType.CREATE, `categories/${id}`);
+      const finalError = handleFirestoreError(error, OperationType.CREATE, `categories/${id}`);
+      toast.error(finalError.message);
     }
   };
 
   const updateCategory = async (category: Category) => {
     try {
       await setDoc(doc(db, 'categories', category.id), category);
+      toast.success('Categoría actualizada correctamente');
     } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, `categories/${category.id}`);
+      const finalError = handleFirestoreError(error, OperationType.UPDATE, `categories/${category.id}`);
+      toast.error(finalError.message);
     }
   };
 
   const deleteCategory = async (id: string) => {
     try {
       await deleteDoc(doc(db, 'categories', id));
+      toast.success('Categoría eliminada correctamente');
     } catch (error) {
-      handleFirestoreError(error, OperationType.DELETE, `categories/${id}`);
+      const finalError = handleFirestoreError(error, OperationType.DELETE, `categories/${id}`);
+      toast.error(finalError.message);
     }
   };
 
@@ -255,16 +268,20 @@ export function useFinanceData() {
     };
     try {
       await setDoc(doc(db, 'transactions', id), newTransaction);
+      toast.success('Transacción registrada');
     } catch (error) {
-      handleFirestoreError(error, OperationType.CREATE, `transactions/${id}`);
+      const finalError = handleFirestoreError(error, OperationType.CREATE, `transactions/${id}`);
+      toast.error(finalError.message);
     }
   };
 
   const updateTransaction = async (transaction: Transaction) => {
     try {
       await setDoc(doc(db, 'transactions', transaction.id), transaction);
+      toast.success('Transacción actualizada');
     } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, `transactions/${transaction.id}`);
+      const finalError = handleFirestoreError(error, OperationType.UPDATE, `transactions/${transaction.id}`);
+      toast.error(finalError.message);
     }
   };
 
@@ -274,16 +291,20 @@ export function useFinanceData() {
       batch.set(doc(db, 'transactions', expenseTx.id), expenseTx);
       batch.set(doc(db, 'transactions', incomeTx.id), incomeTx);
       await batch.commit();
+      toast.success('Transferencia actualizada');
     } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, 'transactions/batch-update-transfer');
+      const finalError = handleFirestoreError(error, OperationType.WRITE, 'transactions/batch-update-transfer');
+      toast.error(finalError.message);
     }
   };
 
   const deleteTransaction = async (id: string) => {
     try {
       await deleteDoc(doc(db, 'transactions', id));
+      toast.success('Transacción eliminada');
     } catch (error) {
-      handleFirestoreError(error, OperationType.DELETE, `transactions/${id}`);
+      const finalError = handleFirestoreError(error, OperationType.DELETE, `transactions/${id}`);
+      toast.error(finalError.message);
     }
   };
 
@@ -324,8 +345,10 @@ export function useFinanceData() {
       batch.set(doc(db, 'transactions', expenseId), expenseTx);
       batch.set(doc(db, 'transactions', incomeId), incomeTx);
       await batch.commit();
+      toast.success('Transferencia realizada con éxito');
     } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, 'transactions/batch-transfer');
+      const finalError = handleFirestoreError(error, OperationType.WRITE, 'transactions/batch-transfer');
+      toast.error(finalError.message);
     }
   };
 
@@ -333,8 +356,10 @@ export function useFinanceData() {
     if (!user) return;
     try {
       await setDoc(doc(db, 'settings', user.uid), newSettings);
+      toast.success('Configuración guardada');
     } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, `settings/${user.uid}`);
+      const finalError = handleFirestoreError(error, OperationType.UPDATE, `settings/${user.uid}`);
+      toast.error(finalError.message);
     }
   };
 

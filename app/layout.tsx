@@ -2,6 +2,7 @@ import type {Metadata} from 'next';
 import './globals.css'; // Global styles
 import { FirebaseProvider, ErrorBoundary } from '@/components/FirebaseProvider';
 import { Inter, JetBrains_Mono } from 'next/font/google';
+import { Toaster } from 'sonner';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -33,6 +34,7 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
             {children}
           </ErrorBoundary>
         </FirebaseProvider>
+        <Toaster position="top-center" richColors />
         <script
           dangerouslySetInnerHTML={{
             __html: `

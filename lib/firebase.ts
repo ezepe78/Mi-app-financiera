@@ -47,9 +47,11 @@ export interface FirestoreErrorInfo {
   }
 }
 
-export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null): Error {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  
   const errInfo: FirestoreErrorInfo = {
-    error: error instanceof Error ? error.message : String(error),
+    error: errorMessage,
     authInfo: {
       userId: auth.currentUser?.uid,
       email: auth.currentUser?.email,
@@ -66,8 +68,28 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
     operationType,
     path
   };
+  
   console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
+
+  // Create a user-friendly message
+  let userMessage = 'Ocurrió un error al procesar la solicitud.';
+  const lowerError = errorMessage.toLowerCase();
+  
+  if (lowerError.includes('permission-denied')) {
+    userMessage = 'No tienes permisos para realizar esta acción.';
+  } else if (lowerError.includes('quota-exceeded')) {
+    userMessage = 'Se ha excedido la cuota de uso. Intenta de nuevo más tarde.';
+  } else if (lowerError.includes('not-found')) {
+    userMessage = 'El recurso solicitado no fue encontrado.';
+  } else if (lowerError.includes('unavailable')) {
+    userMessage = 'El servicio no está disponible temporalmente. Revisa tu conexión.';
+  } else if (lowerError.includes('unauthenticated')) {
+    userMessage = 'Debes estar autenticado para realizar esta acción.';
+  }
+
+  const finalError = new Error(userMessage);
+  (finalError as any).details = errInfo;
+  return finalError;
 }
 
 // Connection test

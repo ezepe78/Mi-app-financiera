@@ -4,10 +4,25 @@ import React from 'react';
 import { signInWithGoogle } from '@/lib/firebase';
 import { LogIn } from 'lucide-react';
 import { motion } from 'motion/react';
+import { toast } from 'sonner';
 
 import Image from 'next/image';
 
 export function Login() {
+  const handleLogin = async () => {
+    try {
+      await signInWithGoogle();
+      toast.success('Sesión iniciada correctamente');
+    } catch (error: any) {
+      console.error('Login error:', error);
+      if (error.code === 'auth/popup-closed-by-user') {
+        toast.error('La ventana de inicio de sesión fue cerrada.');
+      } else {
+        toast.error('Error al iniciar sesión con Google.');
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <motion.div 
@@ -22,7 +37,7 @@ export function Login() {
         <p className="text-gray-500 mb-8">Gestioná tus gastos de forma simple y segura.</p>
         
         <button 
-          onClick={signInWithGoogle}
+          onClick={handleLogin}
           className="w-full flex items-center justify-center gap-3 py-4 bg-white border border-gray-200 rounded-2xl font-bold text-gray-700 hover:bg-gray-50 transition-all shadow-sm hover:shadow-md"
         >
           <Image 
