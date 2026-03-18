@@ -5,6 +5,8 @@ import { signInWithGoogle } from '@/lib/firebase';
 import { LogIn } from 'lucide-react';
 import { motion } from 'motion/react';
 
+import Image from 'next/image';
+
 export function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
@@ -23,7 +25,13 @@ export function Login() {
           onClick={signInWithGoogle}
           className="w-full flex items-center justify-center gap-3 py-4 bg-white border border-gray-200 rounded-2xl font-bold text-gray-700 hover:bg-gray-50 transition-all shadow-sm hover:shadow-md"
         >
-          <img src="https://www.gstatic.com/firebase/builtins/external/google.svg" alt="Google" className="w-6 h-6" />
+          <Image 
+            src="https://www.gstatic.com/firebase/builtins/external/google.svg" 
+            alt="Google" 
+            width={24} 
+            height={24} 
+            referrerPolicy="no-referrer"
+          />
           Continuar con Google
         </button>
         

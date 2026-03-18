@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { Account, Category, Transaction } from '@/hooks/useFinanceData';
 import { format, parseISO, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
-import { Search, Filter, Trash2, Edit2, X } from 'lucide-react';
+import { Search, Filter, Trash2, Edit2, X, MoreVertical, ArrowRightLeft } from 'lucide-react';
 import { NewTransactionButton } from './NewTransactionButton';
 import { TransactionModal } from './TransactionModal';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface TransactionsViewProps {
   transactions: Transaction[];
@@ -13,12 +14,15 @@ interface TransactionsViewProps {
   onUpdate: (tx: Transaction) => void;
   onDelete: (id: string) => void;
   onAddTransfer: (from: string, to: string, amount: number, date: string, desc: string) => void;
+  onUpdateTransfer: (expenseTx: Transaction, incomeTx: Transaction) => void;
 }
 
-export function TransactionsView({ transactions, accounts, categories, onAdd, onUpdate, onDelete, onAddTransfer }: TransactionsViewProps) {
+export function TransactionsView({ transactions, accounts, categories, onAdd, onUpdate, onDelete, onAddTransfer, onUpdateTransfer }: TransactionsViewProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [txType, setTxType] = useState<'income' | 'expense' | 'transfer'>('expense');
   const [editingTransaction, setEditingTransaction] = useState<Transaction | undefined>(undefined);
+  const [transactionToDelete, setTransactionToDelete] = useState<string | string[] | null>(null);
+  const [menuTransaction, setMenuTransaction] = useState<Transaction | null>(null);
   
   // Filter states
   const [showFilters, setShowFilters] = useState(false);
@@ -41,7 +45,7 @@ export function TransactionsView({ transactions, accounts, categories, onAdd, on
   };
 
   const filteredTransactions = useMemo(() => {
-    return transactions
+    const baseFiltered = transactions
       .filter(tx => {
         // Search filter
         if (search && !tx.description.toLowerCase().includes(search.toLowerCase())) {
@@ -74,8 +78,51 @@ export function TransactionsView({ transactions, accounts, categories, onAdd, on
         }
 
         return true;
-      })
-      .sort((a, b) => new Date(b.issueDate).getTime() - new Date(a.issueDate).getTime());
+      });
+
+    const processedIds = new Set<string>();
+    const unified: any[] = [];
+
+    // Sort by date first to maintain order in the unified list
+    const sortedBase = [...baseFiltered].sort((a, b) => new Date(b.issueDate).getTime() - new Date(a.issueDate).getTime());
+
+    sortedBase.forEach(tx => {
+      if (processedIds.has(tx.id)) return;
+
+      if (tx.type === 'transfer' && tx.linkedTransactionId) {
+        // Find the linked transaction in the FULL list to ensure we get the other side
+        // even if it was filtered out by account filter
+        const linkedTx = transactions.find(t => t.id === tx.linkedTransactionId);
+        
+        if (linkedTx) {
+          const fromTx = tx.amount < 0 ? tx : linkedTx;
+          const toTx = tx.amount > 0 ? tx : linkedTx;
+          
+          unified.push({
+            ...fromTx,
+            type: 'unified_transfer',
+            fromAccountId: fromTx.accountId,
+            toAccountId: toTx.accountId,
+            amount: Math.abs(fromTx.amount),
+            originalIds: [fromTx.id, toTx.id],
+            // Use the transaction that was actually in the filtered set as the "primary" for metadata
+            // if both were in filtered set, it doesn't matter much
+            primaryTx: tx 
+          });
+          
+          processedIds.add(fromTx.id);
+          processedIds.add(toTx.id);
+        } else {
+          unified.push(tx);
+          processedIds.add(tx.id);
+        }
+      } else {
+        unified.push(tx);
+        processedIds.add(tx.id);
+      }
+    });
+
+    return unified;
   }, [transactions, search, startDate, endDate, selectedCategory, selectedAccount]);
 
   const resetFilters = () => {
@@ -107,7 +154,9 @@ export function TransactionsView({ transactions, accounts, categories, onAdd, on
         onAdd={onAdd}
         onUpdate={onUpdate}
         onAddTransfer={onAddTransfer}
+        onUpdateTransfer={onUpdateTransfer}
         initialData={editingTransaction}
+        transactions={transactions}
       />
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-20">
@@ -221,47 +270,88 @@ export function TransactionsView({ transactions, accounts, categories, onAdd, on
             </div>
           ) : (
             filteredTransactions.map(tx => {
+              if (tx.type === 'unified_transfer') {
+                const fromAccount = accounts.find(a => a.id === tx.fromAccountId);
+                const toAccount = accounts.find(a => a.id === tx.toAccountId);
+                
+                return (
+                  <div key={tx.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors group relative">
+                    <div className="flex items-center gap-4 min-w-0 flex-1 mr-4">
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center bg-blue-50 text-blue-600 shrink-0">
+                        <ArrowRightLeft className="w-5 h-5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold text-gray-900 truncate">{tx.description || 'Transferencia'}</p>
+                        <p className="text-sm text-gray-500 truncate">
+                          De <span className="font-medium text-gray-700">{fromAccount?.name || 'Cuenta desconocida'}</span> a <span className="font-medium text-gray-700">{toAccount?.name || 'Cuenta desconocida'}</span>
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 sm:gap-4 shrink-0 ml-auto">
+                      <div className="text-right min-w-[90px] sm:min-w-[120px]">
+                        <p className="font-bold text-gray-900 whitespace-nowrap">
+                          ${tx.amount.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </p>
+                        <p className="text-xs text-gray-500 whitespace-nowrap">{format(parseISO(tx.issueDate), 'dd MMM, yyyy')}</p>
+                      </div>
+                      
+                      <div className="relative shrink-0 z-20">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            console.log("Opening menu for transfer:", tx.primaryTx.id);
+                            setMenuTransaction(tx.primaryTx);
+                          }}
+                          className="p-3 -mr-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors flex items-center justify-center"
+                          aria-label="Opciones de transacción"
+                        >
+                          <MoreVertical className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
               const category = categories.find(c => c.id === tx.categoryId);
               const account = accounts.find(a => a.id === tx.accountId);
               const isIncome = tx.type === 'income' || (tx.type === 'transfer' && tx.amount > 0);
               const txTypeLabel = tx.type === 'transfer' ? 'Transferencia' : (tx.type === 'income' ? 'Ingreso' : 'Gasto');
               
               return (
-                <div key={tx.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors group">
-                  <div className="flex items-center gap-4">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                <div key={tx.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors group relative">
+                  <div className="flex items-center gap-4 min-w-0 flex-1 mr-4">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
                       isIncome ? "bg-emerald-50 text-emerald-600" : "bg-orange-50 text-orange-600"
                     }`}>
                       <span className="font-bold text-lg">{isIncome ? '+' : '-'}</span>
                     </div>
-                    <div>
-                      <p className="font-bold text-gray-900">{tx.description}</p>
-                      <p className="text-sm text-gray-500">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-bold text-gray-900 truncate">{tx.description}</p>
+                      <p className="text-sm text-gray-500 truncate">
                         {txTypeLabel} • {category?.name || 'Sin categoría'} • {account?.name}
                       </p>
                     </div>
                   </div>
-                  <div className="text-right flex items-center gap-6">
-                    <div>
-                      <p className={`font-bold ${isIncome ? "text-emerald-600" : "text-gray-900"}`}>
+                  <div className="flex items-center gap-2 sm:gap-4 shrink-0 ml-auto">
+                    <div className="text-right min-w-[90px] sm:min-w-[120px]">
+                      <p className={`font-bold whitespace-nowrap ${isIncome ? "text-emerald-600" : "text-gray-900"}`}>
                         {isIncome ? '+' : '-'}${Math.abs(tx.amount).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </p>
-                      <p className="text-sm text-gray-500">{format(parseISO(tx.issueDate), 'dd MMM, yyyy')}</p>
+                      <p className="text-xs text-gray-500 whitespace-nowrap">{format(parseISO(tx.issueDate), 'dd MMM, yyyy')}</p>
                     </div>
-                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    
+                    <div className="relative shrink-0 z-20">
                       <button 
-                        onClick={() => handleEditTransaction(tx)}
-                        className="p-2 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-blue-50"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          console.log("Opening menu for transaction:", tx.id);
+                          setMenuTransaction(tx);
+                        }}
+                        className="p-3 -mr-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors flex items-center justify-center"
+                        aria-label="Opciones de transacción"
                       >
-                        <span className="sr-only">Editar</span>
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={() => onDelete(tx.id)}
-                        className="p-2 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50"
-                      >
-                        <span className="sr-only">Eliminar</span>
-                        <Trash2 className="w-4 h-4" />
+                        <MoreVertical className="w-5 h-5" />
                       </button>
                     </div>
                   </div>
@@ -272,6 +362,116 @@ export function TransactionsView({ transactions, accounts, categories, onAdd, on
         </div>
       </div>
       <NewTransactionButton onSelect={handleNewTransaction} />
+
+      {/* Context Menu / Bottom Sheet */}
+      <AnimatePresence>
+        {menuTransaction && (
+          <>
+            {/* Backdrop */}
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMenuTransaction(null)}
+              className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[200]"
+            />
+            
+            {/* Menu Container */}
+            <motion.div 
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed bottom-0 left-0 right-0 bg-white rounded-t-[32px] z-[210] shadow-2xl md:max-w-sm md:mx-auto md:bottom-1/2 md:translate-y-1/2 md:rounded-3xl"
+            >
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900">Opciones</h3>
+                    <p className="text-xs text-gray-500 truncate max-w-[200px]">{menuTransaction.description}</p>
+                  </div>
+                  <button 
+                    onClick={() => setMenuTransaction(null)}
+                    className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                
+                <div className="space-y-2">
+                  <button 
+                    onClick={() => {
+                      handleEditTransaction(menuTransaction);
+                      setMenuTransaction(null);
+                    }}
+                    className="w-full flex items-center gap-4 p-4 bg-gray-50 hover:bg-blue-50 text-gray-700 hover:text-blue-600 rounded-2xl transition-all group"
+                  >
+                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-blue-100">
+                      <Edit2 className="w-5 h-5" />
+                    </div>
+                    <span className="font-bold">Editar transacción</span>
+                  </button>
+                  
+                  <button 
+                    onClick={() => {
+                      if (menuTransaction.type === 'transfer' && menuTransaction.linkedTransactionId) {
+                        setTransactionToDelete([menuTransaction.id, menuTransaction.linkedTransactionId]);
+                      } else {
+                        setTransactionToDelete(menuTransaction.id);
+                      }
+                      setMenuTransaction(null);
+                    }}
+                    className="w-full flex items-center gap-4 p-4 bg-red-50 hover:bg-red-100 text-red-600 rounded-2xl transition-all group"
+                  >
+                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-red-100">
+                      <Trash2 className="w-5 h-5" />
+                    </div>
+                    <span className="font-bold">Eliminar transacción</span>
+                  </button>
+                  
+                  <button 
+                    onClick={() => setMenuTransaction(null)}
+                    className="w-full py-4 text-gray-500 font-bold text-sm hover:text-gray-700 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Confirmation Modal */}
+      {transactionToDelete && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[300] flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-6 animate-in zoom-in-95 duration-200">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">¿Eliminar transacción?</h3>
+            <p className="text-gray-500 mb-6">Esta acción no se puede deshacer. El saldo de la cuenta se ajustará automáticamente.</p>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setTransactionToDelete(null)}
+                className="flex-1 py-3 bg-gray-100 text-gray-600 rounded-2xl font-bold hover:bg-gray-200 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={() => {
+                  if (Array.isArray(transactionToDelete)) {
+                    transactionToDelete.forEach(id => onDelete(id));
+                  } else if (transactionToDelete) {
+                    onDelete(transactionToDelete);
+                  }
+                  setTransactionToDelete(null);
+                }}
+                className="flex-1 py-3 bg-red-600 text-white rounded-2xl font-bold hover:bg-red-700 transition-colors shadow-lg shadow-red-600/20"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

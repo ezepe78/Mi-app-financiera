@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Account, Category, Transaction } from '@/hooks/useFinanceData';
 import { format } from 'date-fns';
 import { X } from 'lucide-react';
@@ -14,33 +14,113 @@ interface TransactionModalProps {
   onAdd: (tx: Omit<Transaction, 'id' | 'uid'>) => void;
   onUpdate?: (tx: Transaction) => void;
   onAddTransfer: (from: string, to: string, amount: number, date: string, desc: string) => void;
+  onUpdateTransfer?: (expenseTx: Transaction, incomeTx: Transaction) => void;
   initialData?: Transaction;
+  transactions?: Transaction[];
 }
 
-export function TransactionModal({ isOpen, onClose, type, accounts, categories, onAdd, onUpdate, onAddTransfer, initialData }: TransactionModalProps) {
-  const [desc, setDesc] = useState(initialData?.description || '');
-  const [amount, setAmount] = useState(initialData?.amount.toString() || '');
-  const [accountId, setAccountId] = useState(initialData?.accountId || '');
-  const [toAccountId, setToAccountId] = useState('');
-  const [categoryId, setCategoryId] = useState(initialData?.categoryId || '');
-  const [date, setDate] = useState(initialData?.issueDate || format(new Date(), 'yyyy-MM-dd'));
-  const [completed, setCompleted] = useState(initialData ? initialData.completed : true);
+export function TransactionModal({ isOpen, onClose, type, accounts, categories, onAdd, onUpdate, onAddTransfer, onUpdateTransfer, initialData, transactions }: TransactionModalProps) {
+  const linkedTx = useMemo(() => {
+    if (type === 'transfer' && initialData && transactions) {
+      return transactions.find(t => t.id === initialData.linkedTransactionId);
+    }
+    return null;
+  }, [type, initialData, transactions]);
+
+  const fromTx = initialData && type === 'transfer' ? (initialData.amount < 0 ? initialData : linkedTx) : initialData;
+  const toTx = initialData && type === 'transfer' ? (initialData.amount > 0 ? initialData : linkedTx) : null;
+
+  const [desc, setDesc] = useState(fromTx?.description || '');
+  const [amount, setAmount] = useState(fromTx?.amount ? Math.abs(fromTx.amount).toString() : '');
+  const [accountId, setAccountId] = useState(fromTx?.accountId || '');
+  const [toAccountId, setToAccountId] = useState(toTx?.accountId || '');
+  const [categoryId, setCategoryId] = useState(fromTx?.categoryId || '');
+  const [date, setDate] = useState(fromTx?.issueDate || format(new Date(), 'yyyy-MM-dd'));
+  const [completed, setCompleted] = useState(fromTx ? fromTx.completed : true);
+  const [error, setError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+
+    const parsedAmount = parseFloat(amount);
+    
+    // Common validations
+    if (!amount || isNaN(parsedAmount) || parsedAmount <= 0) {
+      setError('El monto debe ser mayor a cero');
+      return;
+    }
+    if (!accountId) {
+      setError('Debes seleccionar una cuenta');
+      return;
+    }
+    if (!date) {
+      setError('Debes seleccionar una fecha');
+      return;
+    }
+
     if (type === 'transfer') {
-      if (!accountId || !toAccountId || !amount) return;
-      onAddTransfer(accountId, toAccountId, parseFloat(amount), date, desc || 'Transferencia');
+      if (!toAccountId) {
+        setError('Debes seleccionar una cuenta de destino');
+        return;
+      }
+      if (accountId === toAccountId) {
+        setError('La cuenta de origen y destino deben ser diferentes');
+        return;
+      }
+      
+      if (initialData && onUpdateTransfer && transactions) {
+        const linkedTx = transactions.find(t => t.id === initialData.linkedTransactionId);
+        if (linkedTx) {
+          const expenseId = initialData.amount < 0 ? initialData.id : linkedTx.id;
+          const incomeId = initialData.amount > 0 ? initialData.id : linkedTx.id;
+          
+          const expenseTx: Transaction = {
+            id: expenseId,
+            uid: initialData.uid,
+            type: 'transfer',
+            description: desc || 'Transferencia',
+            amount: -parsedAmount,
+            accountId: accountId,
+            categoryId: 'transfer',
+            issueDate: date,
+            dueDate: date,
+            completed: true,
+            linkedTransactionId: incomeId
+          };
+
+          const incomeTx: Transaction = {
+            id: incomeId,
+            uid: initialData.uid,
+            type: 'transfer',
+            description: desc || 'Transferencia',
+            amount: parsedAmount,
+            accountId: toAccountId,
+            categoryId: 'transfer',
+            issueDate: date,
+            dueDate: date,
+            completed: true,
+            linkedTransactionId: expenseId
+          };
+
+          onUpdateTransfer(expenseTx, incomeTx);
+        }
+      } else {
+        onAddTransfer(accountId, toAccountId, parsedAmount, date, desc || 'Transferencia');
+      }
     } else {
-      if (!accountId || !categoryId || !amount) return;
+      if (!categoryId) {
+        setError('Debes seleccionar una categoría');
+        return;
+      }
       
       if (initialData && onUpdate) {
         onUpdate({
           ...initialData,
           description: desc,
-          amount: parseFloat(amount),
+          amount: parsedAmount,
           accountId,
           categoryId,
           issueDate: date,
@@ -51,7 +131,7 @@ export function TransactionModal({ isOpen, onClose, type, accounts, categories, 
         onAdd({
           type,
           description: desc || (type === 'income' ? 'Ingreso' : 'Gasto'),
-          amount: parseFloat(amount),
+          amount: parsedAmount,
           accountId,
           categoryId,
           issueDate: date,
@@ -82,6 +162,11 @@ export function TransactionModal({ isOpen, onClose, type, accounts, categories, 
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {error && (
+            <div className="p-3 bg-red-50 border border-red-100 text-red-600 text-sm font-bold rounded-2xl animate-in fade-in slide-in-from-top-2 duration-200">
+              {error}
+            </div>
+          )}
           <div>
             <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5">Descripción</label>
             <input 

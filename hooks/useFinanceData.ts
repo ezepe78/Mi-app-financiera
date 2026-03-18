@@ -48,11 +48,24 @@ export interface Transaction {
   linkedTransactionId?: string; // For transfers
 }
 
+export interface NotificationSettings {
+  upcomingAlerts: boolean;
+  overdueAlerts: boolean;
+  upcomingDays: number;
+  frequency: 'daily' | 'weekly' | 'realtime';
+}
+
 export function useFinanceData() {
   const { user, loading: authLoading } = useAuth();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [settings, setSettings] = useState<NotificationSettings>({
+    upcomingAlerts: true,
+    overdueAlerts: true,
+    upcomingDays: 3,
+    frequency: 'realtime'
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -78,10 +91,11 @@ export function useFinanceData() {
     let accountsReady = false;
     let categoriesReady = false;
     let transactionsReady = false;
+    let settingsReady = false;
 
     const checkReady = () => {
-      console.log("useFinanceData: checkReady", { accountsReady, categoriesReady, transactionsReady });
-      if (accountsReady && categoriesReady && transactionsReady) {
+      console.log("useFinanceData: checkReady", { accountsReady, categoriesReady, transactionsReady, settingsReady });
+      if (accountsReady && categoriesReady && transactionsReady && settingsReady) {
         setLoading(false);
         console.log("useFinanceData: Data fetch complete, loading set to false");
       }
@@ -90,6 +104,7 @@ export function useFinanceData() {
     const qAccounts = query(collection(db, 'accounts'), where('uid', '==', user.uid));
     const qCategories = query(collection(db, 'categories'), where('uid', '==', user.uid));
     const qTransactions = query(collection(db, 'transactions'), where('uid', '==', user.uid));
+    const docSettings = doc(db, 'settings', user.uid);
 
     console.log("useFinanceData: Attaching onSnapshot listeners");
 
@@ -136,6 +151,18 @@ export function useFinanceData() {
       checkReady();
     });
 
+    const unsubSettings = onSnapshot(docSettings, (snapshot) => {
+      if (snapshot.exists()) {
+        setSettings(snapshot.data() as NotificationSettings);
+      }
+      settingsReady = true;
+      checkReady();
+    }, (error) => {
+      console.error("Error fetching settings:", error);
+      settingsReady = true;
+      checkReady();
+    });
+
     const handleBypass = () => {
       console.warn("useFinanceData: Manual bypass triggered");
       setLoading(false);
@@ -150,6 +177,7 @@ export function useFinanceData() {
       unsubAccounts();
       unsubCategories();
       unsubTransactions();
+      unsubSettings();
       window.removeEventListener('bypass-loading', handleBypass);
     };
   }, [user, authLoading]);
@@ -240,6 +268,17 @@ export function useFinanceData() {
     }
   };
 
+  const updateTransfer = async (expenseTx: Transaction, incomeTx: Transaction) => {
+    try {
+      const batch = writeBatch(db);
+      batch.set(doc(db, 'transactions', expenseTx.id), expenseTx);
+      batch.set(doc(db, 'transactions', incomeTx.id), incomeTx);
+      await batch.commit();
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, 'transactions/batch-update-transfer');
+    }
+  };
+
   const deleteTransaction = async (id: string) => {
     try {
       await deleteDoc(doc(db, 'transactions', id));
@@ -252,13 +291,12 @@ export function useFinanceData() {
     if (!user) return;
     const expenseId = uuidv4();
     const incomeId = uuidv4();
-
     const expenseTx: Transaction = {
       id: expenseId,
       uid: user.uid,
       type: 'transfer',
       description: description || 'Transfer Out',
-      amount,
+      amount: -amount,
       accountId: fromAccountId,
       categoryId: 'transfer', // Special category
       issueDate: date,
@@ -291,10 +329,20 @@ export function useFinanceData() {
     }
   };
 
+  const updateSettings = async (newSettings: NotificationSettings) => {
+    if (!user) return;
+    try {
+      await setDoc(doc(db, 'settings', user.uid), newSettings);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `settings/${user.uid}`);
+    }
+  };
+
   return {
     accounts,
     categories,
     transactions,
+    settings,
     loading,
     addAccount,
     updateAccount,
@@ -304,7 +352,9 @@ export function useFinanceData() {
     deleteCategory,
     addTransaction,
     updateTransaction,
+    updateTransfer,
     deleteTransaction,
-    addTransfer
+    addTransfer,
+    updateSettings
   };
 }

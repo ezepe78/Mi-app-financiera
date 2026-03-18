@@ -1,15 +1,18 @@
 import React from 'react';
-import { Bell, User as UserIcon } from 'lucide-react';
-import { Account, Transaction } from '@/hooks/useFinanceData';
+import { Bell, User as UserIcon, AlertCircle, Clock } from 'lucide-react';
+import { Account, Transaction, NotificationSettings } from '@/hooks/useFinanceData';
 import { format, isBefore, addDays, parseISO, startOfDay } from 'date-fns';
 import { useAuth } from '@/components/FirebaseProvider';
 
 interface RightPanelProps {
   accounts: Account[];
   transactions: Transaction[];
+  settings: NotificationSettings;
 }
 
-export function RightPanel({ accounts, transactions }: RightPanelProps) {
+import Image from 'next/image';
+
+export function RightPanel({ accounts, transactions, settings }: RightPanelProps) {
   const { user } = useAuth();
   const today = startOfDay(new Date());
   
@@ -21,25 +24,35 @@ export function RightPanel({ accounts, transactions }: RightPanelProps) {
     return acc + account.initialBalance + income - expense;
   }, 0);
 
-  // Alerts
-  const upcomingExpenses = transactions.filter(t => 
+  // Alerts based on settings
+  const upcomingExpenses = settings.upcomingAlerts ? transactions.filter(t => 
     t.type === 'expense' && 
     !t.completed && 
-    isBefore(parseISO(t.dueDate), addDays(today, 4)) && 
+    isBefore(parseISO(t.dueDate), addDays(today, settings.upcomingDays + 1)) && 
     !isBefore(parseISO(t.dueDate), today)
-  );
+  ) : [];
 
-  const overdueTransactions = transactions.filter(t => 
+  const overdueTransactions = settings.overdueAlerts ? transactions.filter(t => 
     !t.completed && 
     isBefore(parseISO(t.dueDate), today)
-  );
+  ) : [];
+
+  const hasAlerts = upcomingExpenses.length > 0 || overdueTransactions.length > 0;
 
   return (
     <aside className="w-80 bg-gray-50 border-l border-gray-100 h-screen overflow-y-auto p-6 hidden lg:block sticky top-0">
       <div className="flex justify-between items-center mb-8">
         <div className="flex items-center gap-3">
           {user?.photoURL ? (
-            <img src={user.photoURL} alt={user.displayName || 'User'} className="w-10 h-10 rounded-full" />
+            <div className="relative w-10 h-10">
+              <Image 
+                src={user.photoURL} 
+                alt={user.displayName || 'User'} 
+                fill 
+                className="rounded-full object-cover"
+                referrerPolicy="no-referrer"
+              />
+            </div>
           ) : (
             <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
               <UserIcon className="w-5 h-5 text-gray-500" />
@@ -54,7 +67,7 @@ export function RightPanel({ accounts, transactions }: RightPanelProps) {
         </div>
         <button className="relative p-2 text-gray-400 hover:text-gray-600 transition-colors">
           <Bell className="w-5 h-5" />
-          {(upcomingExpenses.length > 0 || overdueTransactions.length > 0) && (
+          {hasAlerts && (
             <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
           )}
         </button>
@@ -110,22 +123,39 @@ export function RightPanel({ accounts, transactions }: RightPanelProps) {
         </div>
       </div>
 
-      {(upcomingExpenses.length > 0 || overdueTransactions.length > 0) && (
-        <div>
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Alertas</h3>
+      {hasAlerts && (
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold text-gray-900">Alertas</h3>
+            <span className="px-2 py-1 bg-red-50 text-red-600 text-[10px] font-bold rounded-md uppercase tracking-wider">
+              {settings.frequency === 'realtime' ? 'En vivo' : settings.frequency === 'daily' ? 'Diario' : 'Semanal'}
+            </span>
+          </div>
           <div className="space-y-3">
             {overdueTransactions.map(t => (
-              <div key={t.id} className="p-3 bg-red-50 border border-red-100 rounded-xl">
-                <p className="text-xs font-bold text-red-600 mb-1">VENCIDO</p>
-                <p className="text-sm text-gray-900">{t.description}</p>
-                <p className="text-xs text-gray-500 mt-1">Vto: {format(parseISO(t.dueDate), 'dd MMM yyyy')}</p>
+              <div key={t.id} className="p-3 bg-red-50 border border-red-100 rounded-xl flex gap-3">
+                <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs font-bold text-red-600 mb-1 uppercase tracking-tight">VENCIDO</p>
+                  <p className="text-sm font-medium text-gray-900 leading-tight">{t.description}</p>
+                  <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    Vto: {format(parseISO(t.dueDate), 'dd MMM yyyy')}
+                  </p>
+                </div>
               </div>
             ))}
             {upcomingExpenses.map(t => (
-              <div key={t.id} className="p-3 bg-orange-50 border border-orange-100 rounded-xl">
-                <p className="text-xs font-bold text-orange-600 mb-1">PRÓXIMO</p>
-                <p className="text-sm text-gray-900">{t.description}</p>
-                <p className="text-xs text-gray-500 mt-1">Vto: {format(parseISO(t.dueDate), 'dd MMM yyyy')}</p>
+              <div key={t.id} className="p-3 bg-orange-50 border border-orange-100 rounded-xl flex gap-3">
+                <Clock className="w-5 h-5 text-orange-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs font-bold text-orange-600 mb-1 uppercase tracking-tight">PRÓXIMO</p>
+                  <p className="text-sm font-medium text-gray-900 leading-tight">{t.description}</p>
+                  <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    Vto: {format(parseISO(t.dueDate), 'dd MMM yyyy')}
+                  </p>
+                </div>
               </div>
             ))}
           </div>

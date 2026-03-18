@@ -8,7 +8,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-type ViewType = 'dashboard' | 'transactions' | 'accounts' | 'categories';
+type ViewType = 'dashboard' | 'transactions' | 'accounts' | 'categories' | 'settings';
 
 interface SidebarProps {
   currentView: ViewType;
@@ -55,8 +55,16 @@ export function Sidebar({ currentView, setCurrentView }: SidebarProps) {
       </nav>
 
       <div className="p-4 border-t border-gray-100 space-y-1">
-        <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-colors">
-          <Settings className="w-5 h-5 text-gray-400" />
+        <button 
+          onClick={() => setCurrentView('settings')}
+          className={cn(
+            "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors",
+            currentView === 'settings'
+              ? "bg-blue-50 text-blue-600" 
+              : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+          )}
+        >
+          <Settings className={cn("w-5 h-5", currentView === 'settings' ? "text-blue-600" : "text-gray-400")} />
           Configuración
         </button>
         <button 

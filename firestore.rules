@@ -14,6 +14,9 @@ service cloud.firestore {
     // Collection: transactions
     // Fields: id, uid, type, description, amount, accountId, categoryId, issueDate, dueDate, completed, note, linkedTransactionId
     //
+    // Collection: settings
+    // Fields: upcomingAlerts, overdueAlerts, upcomingDays, frequency
+    //
     // ===============================================================
 
     // ===============================================================
@@ -87,6 +90,15 @@ service cloud.firestore {
              (!('linkedTransactionId' in data) || data.linkedTransactionId is string);
     }
 
+    function isValidSettings(data) {
+      return hasRequiredFields(['upcomingAlerts', 'overdueAlerts', 'upcomingDays', 'frequency']) &&
+             hasOnlyAllowedFields(['upcomingAlerts', 'overdueAlerts', 'upcomingDays', 'frequency']) &&
+             data.upcomingAlerts is bool &&
+             data.overdueAlerts is bool &&
+             data.upcomingDays is number && data.upcomingDays >= 1 && data.upcomingDays <= 30 &&
+             data.frequency in ['daily', 'weekly', 'realtime'];
+    }
+
     // ===============================================================
     // Rules
     // ===============================================================
@@ -110,6 +122,12 @@ service cloud.firestore {
       allow create: if isAuthenticated() && isValidTransaction(request.resource.data);
       allow update: if isDocOwner() && isValidTransaction(request.resource.data) && request.resource.data.uid == resource.data.uid;
       allow delete: if isDocOwner() || isAdmin();
+    }
+
+    match /settings/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create, update: if isOwner(userId) && isValidSettings(request.resource.data);
+      allow delete: if isAdmin();
     }
 
     match /users/{userId} {
