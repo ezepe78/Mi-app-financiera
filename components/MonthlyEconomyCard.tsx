@@ -70,11 +70,11 @@ export function MonthlyEconomyCard({ transactions, categories, accounts, current
               />
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-2xl font-bold text-gray-700">{savingsPercentage}%</span>
+              <span className="text-2xl font-mono font-bold text-gray-700">{savingsPercentage}%</span>
             </div>
           </div>
           <div className="text-center">
-            <p className="text-2xl font-bold text-emerald-600">
+            <p className="text-2xl font-mono font-bold text-emerald-600">
               ${savedAmount.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ARS
             </p>
             <p className="text-sm text-gray-500">Importe ahorrado</p>
@@ -88,7 +88,7 @@ export function MonthlyEconomyCard({ transactions, categories, accounts, current
           >
             <div className="text-left">
               <p className="text-sm text-gray-500">Ingresos considerados</p>
-              <p className="text-xl font-bold text-emerald-600">
+              <p className="text-xl font-mono font-bold text-emerald-600">
                 ${totalIncome.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ARS
               </p>
             </div>
@@ -101,7 +101,7 @@ export function MonthlyEconomyCard({ transactions, categories, accounts, current
           >
             <div className="text-left">
               <p className="text-sm text-gray-500">Gastos considerados</p>
-              <p className="text-xl font-bold text-red-500">
+              <p className="text-xl font-mono font-bold text-red-500">
                 ${totalExpense.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ARS
               </p>
             </div>
@@ -145,7 +145,7 @@ export function MonthlyEconomyCard({ transactions, categories, accounts, current
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className={`font-bold ${showDetails === 'income' ? 'text-emerald-600' : 'text-red-600'}`}>
+                          <p className={`font-mono font-bold ${showDetails === 'income' ? 'text-emerald-600' : 'text-red-600'}`}>
                             ${tx.amount.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </p>
                           <p className="text-xs text-gray-400">{format(parseISO(tx.issueDate), 'dd/MM/yyyy')}</p>
@@ -159,7 +159,7 @@ export function MonthlyEconomyCard({ transactions, categories, accounts, current
             <div className="p-6 border-t border-gray-100 bg-gray-50 rounded-b-2xl">
               <div className="flex justify-between items-center">
                 <span className="font-medium text-gray-700">Total {showDetails === 'income' ? 'Ingresos' : 'Gastos'}</span>
-                <span className={`text-xl font-bold ${showDetails === 'income' ? 'text-emerald-600' : 'text-red-600'}`}>
+                <span className={`text-xl font-mono font-bold ${showDetails === 'income' ? 'text-emerald-600' : 'text-red-600'}`}>
                   ${(showDetails === 'income' ? totalIncome : totalExpense).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>

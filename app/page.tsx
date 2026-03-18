@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useFinanceData } from '@/hooks/useFinanceData';
 import { Sidebar } from '@/components/Sidebar';
 import { RightPanel } from '@/components/RightPanel';
+import { BottomNav } from '@/components/BottomNav';
 import { DashboardView } from '@/components/DashboardView';
 import { TransactionsView } from '@/components/TransactionsView';
 import { AccountsView } from '@/components/AccountsView';
@@ -11,7 +12,7 @@ import { CategoriesView } from '@/components/CategoriesView';
 import { SettingsView } from '@/components/SettingsView';
 import { Login } from '@/components/Login';
 import { useAuth } from '@/components/FirebaseProvider';
-import { Menu, Bell, X, AlertCircle, Clock } from 'lucide-react';
+import { Bell, X, AlertCircle, Clock } from 'lucide-react';
 import { format, isBefore, addDays, parseISO, startOfDay } from 'date-fns';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -21,7 +22,6 @@ export default function Home() {
   const [mounted, setMounted] = React.useState(false);
   const { user, loading: authLoading } = useAuth();
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileAlertsOpen, setMobileAlertsOpen] = useState(false);
   const [showForceButton, setShowForceButton] = useState(false);
 
@@ -47,7 +47,6 @@ export default function Home() {
     updateTransaction,
     deleteTransaction,
     addTransfer,
-    updateTransfer,
     settings,
     updateSettings
   } = useFinanceData();
@@ -164,7 +163,6 @@ export default function Home() {
             onUpdate={updateTransaction}
             onDelete={deleteTransaction}
             onAddTransfer={addTransfer}
-            onUpdateTransfer={updateTransfer}
           />
         );
       case 'accounts':
@@ -229,9 +227,6 @@ export default function Home() {
             {hasAlerts && (
               <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
             )}
-          </button>
-          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2 text-gray-500">
-            <Menu className="w-6 h-6" />
           </button>
         </div>
       </div>
@@ -330,37 +325,9 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      {/* Mobile Menu Overlay */}
-      {mobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 bg-white z-40 pt-16">
-          <div className="p-4 space-y-2">
-            {[
-              { id: 'dashboard', label: 'Inicio' },
-              { id: 'transactions', label: 'Transacciones' },
-              { id: 'accounts', label: 'Cuentas' },
-              { id: 'categories', label: 'Categorías' },
-              { id: 'settings', label: 'Configuración' }
-            ].map(view => (
-              <button
-                key={view.id}
-                onClick={() => {
-                  setCurrentView(view.id as ViewType);
-                  setMobileMenuOpen(false);
-                }}
-                className={`w-full text-left px-4 py-3 rounded-xl font-medium ${
-                  currentView === view.id ? 'bg-blue-50 text-blue-600' : 'text-gray-600'
-                }`}
-              >
-                {view.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
       <Sidebar currentView={currentView} setCurrentView={setCurrentView} />
       
-      <main className="flex-1 overflow-y-auto pt-16 md:pt-0">
+      <main className="flex-1 overflow-y-auto pt-16 md:pt-0 pb-20 md:pb-0">
         {renderView()}
       </main>
 
@@ -369,6 +336,8 @@ export default function Home() {
         transactions={transactions} 
         settings={settings}
       />
+
+      <BottomNav currentView={currentView} setCurrentView={setCurrentView} />
     </div>
   );
 }

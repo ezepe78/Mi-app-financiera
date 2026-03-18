@@ -38,7 +38,7 @@ export function NewTransactionButton({ onSelect, className = "" }: NewTransactio
         />
       )}
 
-      <div className="fixed bottom-8 right-8 z-[150]" ref={dropdownRef}>
+      <div className="fixed bottom-20 md:bottom-8 right-6 md:right-8 z-[150]" ref={dropdownRef}>
         {/* Speed Dial Options */}
         <div className="absolute bottom-full right-0 mb-4 space-y-3 flex flex-col items-end">
           {options.map((option, index) => (

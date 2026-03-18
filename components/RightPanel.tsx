@@ -75,7 +75,7 @@ export function RightPanel({ accounts, transactions, settings }: RightPanelProps
 
       <div className="bg-blue-600 rounded-2xl p-6 text-white mb-8 shadow-lg shadow-blue-600/20">
         <p className="text-blue-100 text-sm font-medium mb-1">Balance Total</p>
-        <h2 className="text-3xl font-bold mb-4">${totalBalance.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h2>
+        <h2 className="text-3xl font-mono font-bold mb-4">${totalBalance.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h2>
         <div className="flex gap-2">
           <button className="flex-1 bg-white/20 hover:bg-white/30 transition-colors py-2 rounded-lg text-sm font-medium">
             Retirar
@@ -114,7 +114,7 @@ export function RightPanel({ accounts, transactions, settings }: RightPanelProps
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-bold text-gray-900">${balance.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                    <p className="text-sm font-mono font-bold text-gray-900">${balance.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                   </div>
                 </div>
               );

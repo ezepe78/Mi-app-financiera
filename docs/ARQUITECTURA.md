@@ -5,6 +5,9 @@
 - **Base de Datos:** Firebase Firestore (NoSQL) para almacenamiento de datos en tiempo real.
 - **Autenticación:** Firebase Auth (Google Login) para gestión de usuarios.
 - **Estilo:** Tailwind CSS para diseño responsivo y moderno.
+- **Tipografía:**
+  - **Inter (Sans-serif):** Utilizada para la interfaz de usuario general, menús, etiquetas y descripciones. Proporciona una apariencia limpia y profesional.
+  - **JetBrains Mono (Monospace):** Utilizada exclusivamente para datos numéricos (saldos, montos, porcentajes, fechas e inputs de números). Mejora la legibilidad de las cifras y facilita la comparación visual de valores.
 - **Animaciones:** Framer Motion (`motion/react`) para transiciones suaves y feedback visual.
 
 ## Modelo de Datos (Firestore)

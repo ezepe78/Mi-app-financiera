@@ -1,6 +1,19 @@
 import type {Metadata} from 'next';
 import './globals.css'; // Global styles
 import { FirebaseProvider, ErrorBoundary } from '@/components/FirebaseProvider';
+import { Inter, JetBrains_Mono } from 'next/font/google';
+
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-sans',
+  display: 'swap',
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-mono',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'Finanzas Personales',
@@ -10,11 +23,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
-    <html lang="es-AR">
+    <html lang="es-AR" className={`${inter.variable} ${jetbrainsMono.variable}`}>
       <head>
         <meta name="theme-color" content="#ffffff" />
       </head>
-      <body suppressHydrationWarning>
+      <body suppressHydrationWarning className="font-sans antialiased">
         <FirebaseProvider>
           <ErrorBoundary>
             {children}

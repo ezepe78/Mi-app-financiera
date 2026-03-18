@@ -1,7 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Account, Category, Transaction } from '@/hooks/useFinanceData';
-import { Plus, Trash2, Edit2, Tags, ArrowUpRight, ArrowDownRight, MoreVertical, X } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Plus, Trash2, Edit2, Tags, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 
 interface CategoriesViewProps {
   categories: Category[];
@@ -15,21 +14,8 @@ export function CategoriesView({ categories, transactions, onAdd, onUpdate, onDe
   const [isAdding, setIsAdding] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
-  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [type, setType] = useState<'income' | 'expense'>('expense');
-  
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setActiveMenuId(null);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   const isCategoryUsed = (categoryId: string) => {
     return transactions.some(t => t.categoryId === categoryId);
@@ -62,7 +48,6 @@ export function CategoriesView({ categories, transactions, onAdd, onUpdate, onDe
     setName(category.name);
     setType(category.type);
     setIsAdding(true);
-    setActiveMenuId(null);
   };
 
   const resetForm = () => {
@@ -71,35 +56,10 @@ export function CategoriesView({ categories, transactions, onAdd, onUpdate, onDe
     setEditingCategory(null);
   };
 
-  const renderCategoryItem = (category: Category) => (
-    <div key={category.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors group relative">
-      <div className="flex items-center gap-3">
-        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-          category.type === 'expense' ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'
-        }`}>
-          <Tags className="w-5 h-5" />
-        </div>
-        <p className="font-bold text-gray-900">{category.name}</p>
-      </div>
-      
-      <div className="relative">
-        <button 
-          onClick={(e) => {
-            e.stopPropagation();
-            setActiveMenuId(activeMenuId === category.id ? null : category.id);
-          }}
-          className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-50 transition-colors"
-        >
-          <MoreVertical className="w-5 h-5" />
-        </button>
-      </div>
-    </div>
-  );
-
   return (
-    <div className="p-8 max-w-5xl mx-auto">
+    <div className="p-4 md:p-8 max-w-5xl mx-auto">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Categorías</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Categorías</h1>
         <button 
           onClick={() => setIsAdding(true)}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors"
@@ -165,7 +125,30 @@ export function CategoriesView({ categories, transactions, onAdd, onUpdate, onDe
           </h2>
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="divide-y divide-gray-100">
-              {categories.filter(c => c.type === 'expense').map(renderCategoryItem)}
+              {categories.filter(c => c.type === 'expense').map(category => (
+                <div key={category.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors group">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-red-50 text-red-600 flex items-center justify-center">
+                      <Tags className="w-5 h-5" />
+                    </div>
+                    <p className="font-bold text-gray-900">{category.name}</p>
+                  </div>
+                  <div className="flex items-center gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button 
+                      onClick={() => handleEdit(category)}
+                      className="p-2 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-blue-50"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={() => setCategoryToDelete(category)}
+                      className="p-2 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -177,102 +160,34 @@ export function CategoriesView({ categories, transactions, onAdd, onUpdate, onDe
           </h2>
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="divide-y divide-gray-100">
-              {categories.filter(c => c.type === 'income').map(renderCategoryItem)}
+              {categories.filter(c => c.type === 'income').map(category => (
+                <div key={category.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors group">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                      <Tags className="w-5 h-5" />
+                    </div>
+                    <p className="font-bold text-gray-900">{category.name}</p>
+                  </div>
+                  <div className="flex items-center gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button 
+                      onClick={() => handleEdit(category)}
+                      className="p-2 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-blue-50"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={() => setCategoryToDelete(category)}
+                      className="p-2 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
       </div>
-
-      {/* Global Context Menu (Bottom Sheet / Popover) */}
-      <AnimatePresence>
-        {activeMenuId && (
-          (() => {
-            const category = categories.find(c => c.id === activeMenuId);
-            if (!category) return null;
-
-            return (
-              <>
-                {/* Mobile Bottom Sheet Backdrop */}
-                <motion.div 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] md:hidden"
-                  onClick={() => setActiveMenuId(null)}
-                />
-                
-                {/* Mobile Bottom Sheet */}
-                <motion.div 
-                  initial={{ y: "100%" }}
-                  animate={{ y: 0 }}
-                  exit={{ y: "100%" }}
-                  transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                  className="fixed bottom-0 left-0 right-0 bg-white rounded-t-[32px] p-6 z-[101] shadow-2xl md:hidden"
-                >
-                  <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-8" />
-                  <div className="space-y-2">
-                    <button 
-                      onClick={(e) => { 
-                        e.stopPropagation();
-                        handleEdit(category); 
-                      }}
-                      className="w-full flex items-center gap-4 p-4 text-gray-700 font-bold hover:bg-gray-50 rounded-2xl transition-colors"
-                    >
-                      <div className="w-10 h-10 bg-gray-50 text-gray-600 rounded-full flex items-center justify-center">
-                        <Edit2 className="w-5 h-5" />
-                      </div>
-                      Editar Categoría
-                    </button>
-                    <button 
-                      onClick={(e) => { 
-                        e.stopPropagation();
-                        setCategoryToDelete(category); 
-                        setActiveMenuId(null); 
-                      }}
-                      className="w-full flex items-center gap-4 p-4 text-red-600 font-bold hover:bg-red-50 rounded-2xl transition-colors"
-                    >
-                      <div className="w-10 h-10 bg-red-50 text-red-600 rounded-full flex items-center justify-center">
-                        <Trash2 className="w-5 h-5" />
-                      </div>
-                      Eliminar Categoría
-                    </button>
-                    <button 
-                      onClick={() => setActiveMenuId(null)}
-                      className="w-full p-4 text-gray-400 font-bold mt-4"
-                    >
-                      Cancelar
-                    </button>
-                  </div>
-                </motion.div>
-
-                {/* Desktop Popover */}
-                <motion.div 
-                  ref={menuRef}
-                  initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                  className="hidden md:block absolute right-8 top-12 w-56 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-50"
-                >
-                  <button 
-                    onClick={() => handleEdit(category)}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors"
-                  >
-                    <Edit2 className="w-4 h-4 text-gray-400" />
-                    Editar Categoría
-                  </button>
-                  <button 
-                    onClick={() => { setCategoryToDelete(category); setActiveMenuId(null); }}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50 transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4 text-red-400" />
-                    Eliminar Categoría
-                  </button>
-                </motion.div>
-              </>
-            );
-          })()
-        )}
-      </AnimatePresence>
 
       {/* Confirmation/Warning Modal */}
       {categoryToDelete && (
