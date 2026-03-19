@@ -18,16 +18,55 @@ interface TransactionModalProps {
 }
 
 export function TransactionModal({ isOpen, onClose, type, accounts, categories, onAdd, onUpdate, onAddTransfer, initialData }: TransactionModalProps) {
+  const [defaultDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [desc, setDesc] = useState(initialData?.description || '');
   const [amount, setAmount] = useState(initialData?.amount.toString() || '');
   const [accountId, setAccountId] = useState(initialData?.accountId || '');
   const [toAccountId, setToAccountId] = useState('');
   const [categoryId, setCategoryId] = useState(initialData?.categoryId || '');
-  const [date, setDate] = useState(initialData?.issueDate || format(new Date(), 'yyyy-MM-dd'));
+  const [date, setDate] = useState(initialData?.issueDate || defaultDate);
   const [completed, setCompleted] = useState(initialData ? initialData.completed : true);
   const [error, setError] = useState<string | null>(null);
+  const [showConfirmClose, setShowConfirmClose] = useState(false);
 
   if (!isOpen) return null;
+
+  const hasChanges = () => {
+    const initialDesc = initialData?.description || '';
+    const initialAmount = initialData?.amount.toString() || '';
+    const initialAccountId = initialData?.accountId || '';
+    const initialCategoryId = initialData?.categoryId || '';
+    const initialDate = initialData?.issueDate || defaultDate;
+    const initialCompleted = initialData ? initialData.completed : true;
+    const initialToAccountId = '';
+
+    return (
+      desc !== initialDesc ||
+      amount !== initialAmount ||
+      accountId !== initialAccountId ||
+      categoryId !== initialCategoryId ||
+      date !== initialDate ||
+      completed !== initialCompleted ||
+      toAccountId !== initialToAccountId
+    );
+  };
+
+  const handleCloseAttempt = () => {
+    if (hasChanges()) {
+      setShowConfirmClose(true);
+    } else {
+      onClose();
+    }
+  };
+
+  const handleConfirmDiscard = () => {
+    setShowConfirmClose(false);
+    onClose();
+  };
+
+  const handleCancelDiscard = () => {
+    setShowConfirmClose(false);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,7 +144,7 @@ export function TransactionModal({ isOpen, onClose, type, accounts, categories, 
       <div className="bg-white w-full h-full md:h-auto md:max-w-lg rounded-t-3xl md:rounded-3xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom md:zoom-in-95 duration-300">
         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50 sticky top-0 z-10">
           <h2 className="text-xl font-bold text-gray-900">{isEditing ? 'Editar' : 'Nueva'} {typeMap[type]}</h2>
-          <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
+          <button type="button" onClick={handleCloseAttempt} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
             <X className="w-5 h-5 text-gray-500" />
           </button>
         </div>
@@ -215,7 +254,7 @@ export function TransactionModal({ isOpen, onClose, type, accounts, categories, 
           <div className="flex flex-col sm:flex-row gap-3 pt-4 pb-8 md:pb-0">
             <button 
               type="button" 
-              onClick={onClose}
+              onClick={handleCloseAttempt}
               className="flex-1 py-4 bg-gray-100 text-gray-600 rounded-2xl font-bold hover:bg-gray-200 transition-colors order-2 sm:order-1"
             >
               Cancelar
@@ -229,6 +268,32 @@ export function TransactionModal({ isOpen, onClose, type, accounts, categories, 
           </div>
         </form>
       </div>
+
+      {/* Confirmation Modal */}
+      {showConfirmClose && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[300] flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-6 animate-in zoom-in-95 duration-200">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">¿Seguro que quieres descartar los cambios?</h3>
+            <p className="text-gray-500 mb-6">Los datos ingresados no se guardarán.</p>
+            <div className="flex gap-3">
+              <button 
+                type="button"
+                onClick={handleCancelDiscard}
+                className="flex-1 py-3 bg-gray-100 text-gray-600 rounded-2xl font-bold hover:bg-gray-200 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button 
+                type="button"
+                onClick={handleConfirmDiscard}
+                className="flex-1 py-3 bg-red-600 text-white rounded-2xl font-bold hover:bg-red-700 transition-colors shadow-lg shadow-red-600/20"
+              >
+                Descartar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

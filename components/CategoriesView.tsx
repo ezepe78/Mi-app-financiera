@@ -62,10 +62,10 @@ export function CategoriesView({ categories, transactions, onAdd, onUpdate, onDe
         <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Categorías</h1>
         <button 
           onClick={() => setIsAdding(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors"
+          className="flex items-center justify-center gap-2 w-[150px] h-[45px] text-[14px] leading-[20px] bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors"
         >
-          <Plus className="w-5 h-5" />
-          Agregar Categoría
+          <Plus className="w-4 h-4 shrink-0" />
+          <span className="truncate">Nueva Categoría</span>
         </button>
       </div>
 

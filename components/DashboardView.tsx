@@ -6,6 +6,7 @@ import { Wallet, Building2, CreditCard, ChevronLeft, ChevronRight } from 'lucide
 import { MonthlyEconomyCard } from './MonthlyEconomyCard';
 import { NewTransactionButton } from './NewTransactionButton';
 import { TransactionModal } from './TransactionModal';
+import { AccountTransactionsModal } from './AccountTransactionsModal';
 
 interface DashboardViewProps {
   accounts: Account[];
@@ -19,6 +20,8 @@ export function DashboardView({ accounts, transactions, categories, onAdd, onAdd
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [isAdding, setIsAdding] = useState(false);
   const [txType, setTxType] = useState<'income' | 'expense' | 'transfer'>('expense');
+  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
+  const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
   
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -84,6 +87,13 @@ export function DashboardView({ accounts, transactions, categories, onAdd, onAdd
     setIsAdding(true);
   };
 
+  const handleAccountClick = (accountId: string) => {
+    setSelectedAccountId(accountId);
+    setIsAccountModalOpen(true);
+  };
+
+  const selectedAccount = accounts.find(a => a.id === selectedAccountId) || null;
+
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
@@ -138,7 +148,11 @@ export function DashboardView({ accounts, transactions, categories, onAdd, onAdd
             const isLargeAmount = balanceStr.length > 12;
             
             return (
-              <div key={account.id} className="bg-white px-5 py-3.5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between gap-4 w-full">
+              <button 
+                key={account.id} 
+                onClick={() => handleAccountClick(account.id)}
+                className="bg-white px-5 py-3.5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between gap-4 w-full hover:bg-gray-50 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center shrink-0">
                     {getAccountIcon(account.type)}
@@ -153,7 +167,7 @@ export function DashboardView({ accounts, transactions, categories, onAdd, onAdd
                     ${balanceStr}
                   </p>
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>
@@ -168,6 +182,15 @@ export function DashboardView({ accounts, transactions, categories, onAdd, onAdd
       />
 
       <NewTransactionButton onSelect={handleNewTransaction} />
+
+      <AccountTransactionsModal 
+        isOpen={isAccountModalOpen}
+        onClose={() => setIsAccountModalOpen(false)}
+        account={selectedAccount}
+        transactions={transactions}
+        categories={categories}
+        currentMonth={currentMonth}
+      />
     </div>
   );
 }
