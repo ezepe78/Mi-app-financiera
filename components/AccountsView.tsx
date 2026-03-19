@@ -180,6 +180,7 @@ export function AccountsView({ accounts, transactions, onAdd, onUpdate, onDelete
                   <p className={`font-bold text-gray-900 tracking-tighter font-mono ${isLargeAmount ? 'text-lg md:text-xl' : 'text-xl md:text-2xl'}`}>
                     {balanceStr}
                   </p>
+                  <span className="text-[10px] md:text-xs font-bold text-gray-400 ml-1 font-sans">ARS</span>
                 </div>
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5 hidden sm:block">Saldo Disponible</p>
               </div>

@@ -82,9 +82,11 @@ export function MonthlyEconomyCard({ transactions, categories, accounts, current
         </div>
 
         <div className="space-y-4">
-          <button 
-            onClick={() => setShowDetails('income')}
-            className="w-full flex items-center justify-between p-3 hover:bg-gray-50 rounded-xl transition-colors group"
+          <div 
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowDetails('income'); }}
+            className="w-full flex items-center justify-between p-3 hover:bg-gray-50 rounded-xl transition-colors group cursor-pointer"
+            role="button"
+            tabIndex={0}
           >
             <div className="text-left">
               <p className="text-sm text-gray-500">Ingresos considerados</p>
@@ -93,11 +95,13 @@ export function MonthlyEconomyCard({ transactions, categories, accounts, current
               </p>
             </div>
             <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-emerald-500 transition-colors" />
-          </button>
+          </div>
 
-          <button 
-            onClick={() => setShowDetails('expense')}
-            className="w-full flex items-center justify-between p-3 hover:bg-gray-50 rounded-xl transition-colors group"
+          <div 
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowDetails('expense'); }}
+            className="w-full flex items-center justify-between p-3 hover:bg-gray-50 rounded-xl transition-colors group cursor-pointer"
+            role="button"
+            tabIndex={0}
           >
             <div className="text-left">
               <p className="text-sm text-gray-500">Gastos considerados</p>
@@ -106,20 +110,35 @@ export function MonthlyEconomyCard({ transactions, categories, accounts, current
               </p>
             </div>
             <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-red-500 transition-colors" />
-          </button>
+          </div>
         </div>
       </div>
 
       {/* Details Modal */}
       {showDetails && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl">
+        <div 
+          className="fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4 border-4 border-red-500"
+          onClick={() => {
+            console.log('Modal background clicked');
+            setShowDetails(null);
+          }}
+        >
+          <div 
+            className="bg-white rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl"
+            onClick={(e) => {
+              console.log('Modal content clicked');
+              e.stopPropagation();
+            }}
+          >
             <div className="p-6 border-b border-gray-100 flex items-center justify-between">
               <h3 className="text-xl font-bold text-gray-900">
                 Movimientos de {showDetails === 'income' ? 'Ingresos' : 'Gastos'} - {format(currentMonth, 'MMMM yyyy', { locale: es })}
               </h3>
               <button 
-                onClick={() => setShowDetails(null)}
+                onClick={() => {
+                  console.log('Close button clicked');
+                  setShowDetails(null);
+                }}
                 className="p-2 hover:bg-gray-100 rounded-full transition-colors"
               >
                 <X className="w-6 h-6 text-gray-500" />

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Account, Transaction, Category } from '@/hooks/useFinanceData';
 import { format, parseISO, startOfMonth, endOfMonth, isWithinInterval, isBefore, addMonths, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { ArrowUpRight, ArrowDownRight, TrendingUp, CheckCircle2, Clock, Wallet, Building2, CreditCard, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Wallet, Building2, CreditCard, ChevronLeft, ChevronRight } from 'lucide-react';
 import { MonthlyEconomyCard } from './MonthlyEconomyCard';
 import { NewTransactionButton } from './NewTransactionButton';
 import { TransactionModal } from './TransactionModal';
@@ -69,10 +69,6 @@ export function DashboardView({ accounts, transactions, categories, onAdd, onAdd
   });
 
   const totalHistoricalBalance = historicalAccounts.reduce((sum, a) => sum + a.historicalBalance, 0);
-
-  const recentTransactions = [...monthlyTransactions]
-    .sort((a, b) => new Date(b.issueDate).getTime() - new Date(a.issueDate).getTime())
-    .slice(0, 5);
 
   const getAccountIcon = (type: string) => {
     switch(type) {
@@ -171,65 +167,7 @@ export function DashboardView({ accounts, transactions, categories, onAdd, onAdd
         onMonthChange={setCurrentMonth}
       />
 
-      <div className="mb-12">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-gray-900">Últimas Transacciones</h2>
-          <button className="text-blue-600 text-sm font-medium hover:text-blue-700">Ver todo</button>
-        </div>
-        
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          {recentTransactions.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">Aún no hay transacciones.</div>
-          ) : (
-            <div className="divide-y divide-gray-100">
-              {recentTransactions.map(tx => {
-                const category = categories.find(c => c.id === tx.categoryId);
-                const account = accounts.find(a => a.id === tx.accountId);
-                const isIncome = tx.type === 'income' || (tx.type === 'transfer' && tx.amount > 0);
-                const txTypeLabel = tx.type === 'transfer' ? 'Transferencia' : (tx.type === 'income' ? 'Ingreso' : 'Gasto');
-                
-                return (
-                  <div key={tx.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
-                    <div className="flex items-center gap-4">
-                      <div className={cn(
-                        "w-10 h-10 rounded-full flex items-center justify-center",
-                        isIncome ? "bg-emerald-50 text-emerald-600" : "bg-orange-50 text-orange-600"
-                      )}>
-                        {isIncome ? <ArrowUpRight className="w-5 h-5" /> : <ArrowDownRight className="w-5 h-5" />}
-                      </div>
-                      <div>
-                        <p className="font-bold text-gray-900">{tx.description}</p>
-                        <p className="text-sm text-gray-500">{txTypeLabel} • {category?.name || 'Sin categoría'} • {account?.name}</p>
-                      </div>
-                    </div>
-                    <div className="text-right flex items-center gap-4">
-                      <div>
-                        <p className={cn(
-                          "font-bold font-mono",
-                          isIncome ? "text-emerald-600" : "text-gray-900"
-                        )}>
-                          {isIncome ? '+' : '-'}${Math.abs(tx.amount).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </p>
-                        <p className="text-sm text-gray-500">{format(parseISO(tx.issueDate), 'HH:mm')} • {format(parseISO(tx.issueDate), 'dd MMM')}</p>
-                      </div>
-                      {tx.completed ? (
-                        <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                      ) : (
-                        <Clock className="w-5 h-5 text-orange-500" />
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </div>
       <NewTransactionButton onSelect={handleNewTransaction} />
     </div>
   );
-}
-
-function cn(...classes: (string | undefined | null | false)[]) {
-  return classes.filter(Boolean).join(' ');
 }
