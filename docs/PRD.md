@@ -17,26 +17,29 @@ Personas que buscan un control detallado de sus finanzas personales y que maneja
 
 ## 5. Alcance
 - Registro de cuentas, categorías y transacciones.
-- Dashboard resumen.
-- Filtros avanzados.
+- Dashboard resumen con tarjetas de cuenta interactivas.
+- Filtros avanzados y búsqueda en tiempo real.
 - Unificación de transferencias en la vista de transacciones.
+- Sistema de seguridad mediante confirmaciones antes de acciones destructivas o descartar cambios.
 
 ## 6. Módulos Funcionales
 - **Autenticación:** Google Login.
-- **Cuentas:** CRUD de cuentas financieras.
+- **Cuentas:** CRUD de cuentas financieras con validación de integridad (no eliminar si hay transacciones).
 - **Categorías:** CRUD de categorías de ingresos/gastos.
-- **Transacciones:** Registro y visualización de movimientos.
-- **Transferencias:** Lógica de vinculación entre cuentas.
+- **Transacciones:** Registro y visualización de movimientos con soporte para transferencias vinculadas.
+- **Transferencias:** Lógica de vinculación automática entre cuentas de origen y destino.
+- **Seguridad UX:** Modales de confirmación para cierre de formularios con cambios y eliminaciones.
 
 ## 7. Flujos de Usuario
-- Login -> Dashboard -> Ver saldos.
-- Nueva Transacción -> Seleccionar tipo -> Completar datos -> Guardar.
-- Ver Transacciones -> Aplicar filtros -> Consultar detalles.
+- Login -> Dashboard -> Ver saldos -> Click en cuenta -> Ver transacciones de esa cuenta.
+- Nueva Transacción -> Seleccionar tipo -> Completar datos -> Intentar cerrar -> Confirmar descarte o Guardar.
+- Ver Transacciones -> Aplicar filtros -> Consultar detalles unificados de transferencias.
 
 ## 8. Reglas de Negocio
-- Una transferencia debe afectar el saldo de dos cuentas (origen y destino).
+- Una transferencia debe afectar el saldo de dos cuentas (origen y destino) mediante registros vinculados.
 - Los gastos restan saldo, los ingresos suman saldo.
 - Las transferencias no afectan el balance total del usuario, solo el de las cuentas individuales.
+- No se permite eliminar una cuenta si tiene transacciones registradas.
 
 ## 9. Modelo de Datos
 Ver `firebase-blueprint.json` para detalles técnicos.

@@ -20,22 +20,21 @@ Especificaciones del flujo de navegación y acciones del usuario.
    - Monto.
    - Fecha.
    - Descripción/Nota.
-4. El usuario hace clic en "Guardar".
-5. El sistema crea dos documentos vinculados en Firestore.
-6. La vista de Transacciones muestra un único registro consolidado.
+4. Si el usuario intenta cerrar sin guardar habiendo escrito datos, aparece un modal de confirmación.
+5. El usuario hace clic en "Guardar".
+6. El sistema crea dos documentos vinculados en Firestore.
+7. La vista de Transacciones muestra un registro consolidado (filtrando el ingreso duplicado).
 
-### B. Consulta de Movimientos
-1. El usuario accede a la sección "Transacciones".
-2. Visualiza la lista de movimientos ordenados por fecha descendente.
-3. Las transferencias se distinguen por un icono de doble flecha y la leyenda "De [Origen] a [Destino]".
-4. El usuario puede filtrar por cuenta para ver solo los movimientos que afectan a una billetera específica.
+### B. Consulta de Movimientos desde Dashboard
+1. El usuario visualiza sus cuentas en el Dashboard.
+2. Hace clic en una tarjeta de cuenta (ej: "Banco").
+3. El sistema abre un modal con la lista de transacciones filtrada automáticamente para esa cuenta.
 
-### C. Edición de una Transferencia
-1. El usuario hace clic en los tres puntos de una transferencia en la lista.
-2. Selecciona "Editar".
-3. El modal carga los datos de ambos registros vinculados.
-4. El usuario modifica el monto y guarda.
-5. El sistema actualiza ambos documentos en Firestore para mantener la coherencia.
+### C. Eliminación Segura de Cuentas
+1. El usuario accede a "Cuentas".
+2. Intenta eliminar una cuenta con el icono de papelera.
+3. Si la cuenta tiene transacciones, el sistema bloquea la acción informando el motivo.
+4. Si está vacía, solicita confirmación antes de proceder.
 
 ## 4. Estados de la Interfaz
 - **Cargando:** Skeleton screens mientras se recuperan datos de Firestore.

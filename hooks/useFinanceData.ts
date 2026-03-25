@@ -68,6 +68,11 @@ export function useFinanceData() {
     frequency: 'realtime'
   });
   const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const refresh = useCallback(() => {
+    setRefreshKey(prev => prev + 1);
+  }, []);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -181,7 +186,7 @@ export function useFinanceData() {
       unsubSettings();
       window.removeEventListener('bypass-loading', handleBypass);
     };
-  }, [user, authLoading]);
+  }, [user, authLoading, refreshKey]);
 
   const addAccount = async (account: Omit<Account, 'id' | 'uid' | 'createdAt'>) => {
     if (!user) return;
@@ -380,6 +385,7 @@ export function useFinanceData() {
     updateTransfer,
     deleteTransaction,
     addTransfer,
-    updateSettings
+    updateSettings,
+    refresh
   };
 }

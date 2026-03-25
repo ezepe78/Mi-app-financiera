@@ -11,12 +11,13 @@ Guía práctica para la gestión financiera personal.
 - Haz clic en el botón "+" en la esquina inferior derecha.
 - Selecciona el tipo de movimiento: Ingreso, Gasto o Transferencia.
 - Completa los campos requeridos (Monto, Descripción, Cuenta, Categoría, Fecha).
+- Si intentas cerrar el modal habiendo realizado cambios, el sistema te preguntará si deseas descartarlos.
 - Haz clic en "Guardar".
 
 ## 3. Gestión de Transferencias
 - Al realizar una transferencia, selecciona la cuenta de origen y la cuenta de destino.
 - El sistema registrará automáticamente el movimiento entre ambas cuentas.
-- En la lista de transacciones, verás el movimiento unificado indicando el origen y destino.
+- En la lista de transacciones, verás el movimiento unificado (por defecto se muestra el de salida para evitar duplicidad visual).
 
 ## 4. Visualización y Filtros
 - En la pantalla de Transacciones, utiliza la barra de búsqueda para encontrar movimientos por descripción.
@@ -24,4 +25,5 @@ Guía práctica para la gestión financiera personal.
 
 ## 5. Dashboard y Resumen
 - Consulta el Dashboard para ver tu saldo total y el resumen de ingresos y gastos del mes actual.
+- **Tip:** Haz clic en cualquier tarjeta de cuenta para ver rápidamente todos los movimientos de esa cuenta.
 - Visualiza tus cuentas y sus saldos individuales en la sección de Cuentas.

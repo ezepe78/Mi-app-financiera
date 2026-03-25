@@ -111,6 +111,7 @@ export function TransactionsView({ transactions, accounts, categories, onAdd, on
         type={txType}
         accounts={accounts}
         categories={categories}
+        transactions={transactions}
         onAdd={onAdd}
         onUpdate={onUpdate}
         onAddTransfer={onAddTransfer}

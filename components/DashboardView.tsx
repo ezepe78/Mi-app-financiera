@@ -130,6 +130,7 @@ export function DashboardView({ accounts, transactions, categories, onAdd, onAdd
         type={txType}
         accounts={accounts}
         categories={categories}
+        transactions={transactions}
         onAdd={onAdd}
         onAddTransfer={onAddTransfer}
       />

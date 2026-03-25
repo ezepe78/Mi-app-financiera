@@ -11,13 +11,14 @@ interface TransactionModalProps {
   type: 'income' | 'expense' | 'transfer';
   accounts: Account[];
   categories: Category[];
+  transactions: Transaction[];
   onAdd: (tx: Omit<Transaction, 'id' | 'uid'>) => void;
   onUpdate?: (tx: Transaction) => void;
   onAddTransfer: (from: string, to: string, amount: number, date: string, desc: string) => void;
   initialData?: Transaction;
 }
 
-export function TransactionModal({ isOpen, onClose, type, accounts, categories, onAdd, onUpdate, onAddTransfer, initialData }: TransactionModalProps) {
+export function TransactionModal({ isOpen, onClose, type, accounts, categories, transactions, onAdd, onUpdate, onAddTransfer, initialData }: TransactionModalProps) {
   const [defaultDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [desc, setDesc] = useState(initialData?.description || '');
   const [amount, setAmount] = useState(initialData?.amount.toString() || '');
@@ -28,6 +29,40 @@ export function TransactionModal({ isOpen, onClose, type, accounts, categories, 
   const [completed, setCompleted] = useState(initialData ? initialData.completed : true);
   const [error, setError] = useState<string | null>(null);
   const [showConfirmClose, setShowConfirmClose] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  // Extract unique descriptions and their most frequent category
+  const suggestions = React.useMemo(() => {
+    if (type === 'transfer') return [];
+    
+    const descMap = new Map<string, { categoryId: string, count: number }[]>();
+    
+    transactions
+      .filter(t => t.type === type && t.description)
+      .forEach(t => {
+        const existing = descMap.get(t.description) || [];
+        const catIndex = existing.findIndex(e => e.categoryId === t.categoryId);
+        if (catIndex >= 0) {
+          existing[catIndex].count++;
+        } else {
+          existing.push({ categoryId: t.categoryId, count: 1 });
+        }
+        descMap.set(t.description, existing);
+      });
+
+    return Array.from(descMap.entries()).map(([description, cats]) => {
+      // Sort categories by frequency to pick the most common one
+      const bestCat = cats.sort((a, b) => b.count - a.count)[0].categoryId;
+      return { description, categoryId: bestCat };
+    });
+  }, [transactions, type]);
+
+  const filteredSuggestions = React.useMemo(() => {
+    if (!desc || !showSuggestions) return [];
+    return suggestions
+      .filter(s => s.description.toLowerCase().includes(desc.toLowerCase()) && s.description.toLowerCase() !== desc.toLowerCase())
+      .slice(0, 5);
+  }, [desc, suggestions, showSuggestions]);
 
   if (!isOpen) return null;
 
@@ -155,16 +190,45 @@ export function TransactionModal({ isOpen, onClose, type, accounts, categories, 
               {error}
             </div>
           )}
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 relative">
             <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest">Descripción</label>
             <input 
               type="text" 
               value={desc} 
-              onChange={e => setDesc(e.target.value)}
+              onChange={e => {
+                setDesc(e.target.value);
+                setShowSuggestions(true);
+              }}
+              onFocus={() => setShowSuggestions(true)}
+              onBlur={() => {
+                // Delay hiding to allow click on suggestion
+                setTimeout(() => setShowSuggestions(false), 200);
+              }}
               className="w-full px-4 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-medium text-base"
               placeholder={`ej. ${type === 'expense' ? 'Supermercado' : type === 'income' ? 'Sueldo' : 'Ahorros'}`}
               required
             />
+            {filteredSuggestions.length > 0 && (
+              <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-gray-100 rounded-2xl shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                {filteredSuggestions.map((s, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      setDesc(s.description);
+                      setCategoryId(s.categoryId);
+                      setShowSuggestions(false);
+                    }}
+                    className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center justify-between border-b border-gray-50 last:border-0"
+                  >
+                    <span className="font-medium text-gray-900">{s.description}</span>
+                    <span className="text-xs font-bold text-gray-400 uppercase bg-gray-100 px-2 py-1 rounded-lg">
+                      {categories.find(c => c.id === s.categoryId)?.name}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">

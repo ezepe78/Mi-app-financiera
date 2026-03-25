@@ -10,6 +10,7 @@ import { TransactionsView } from '@/components/TransactionsView';
 import { AccountsView } from '@/components/AccountsView';
 import { CategoriesView } from '@/components/CategoriesView';
 import { SettingsView } from '@/components/SettingsView';
+import { PullToRefresh } from '@/components/PullToRefresh';
 import { Login } from '@/components/Login';
 import { useAuth } from '@/components/FirebaseProvider';
 import { Bell, X, AlertCircle, Clock } from 'lucide-react';
@@ -48,7 +49,8 @@ export default function Home() {
     deleteTransaction,
     addTransfer,
     settings,
-    updateSettings
+    updateSettings,
+    refresh
   } = useFinanceData();
 
   const today = startOfDay(new Date());
@@ -328,7 +330,9 @@ export default function Home() {
       <Sidebar currentView={currentView} setCurrentView={setCurrentView} />
       
       <main className="flex-1 overflow-y-auto pt-16 md:pt-0 pb-20 md:pb-0">
-        {renderView()}
+        <PullToRefresh onRefresh={refresh}>
+          {renderView()}
+        </PullToRefresh>
       </main>
 
       <RightPanel 
