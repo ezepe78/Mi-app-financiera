@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Account, Transaction } from '@/hooks/useFinanceData';
-import { Plus, Wallet, Building2, CreditCard, Trash2, Edit2 } from 'lucide-react';
+import { Plus, Wallet, Building2, CreditCard, Trash2, Edit2, ChevronRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface AccountsViewProps {
   accounts: Account[];
@@ -151,7 +152,7 @@ export function AccountsView({ accounts, transactions, onAdd, onUpdate, onDelete
         </div>
       )}
 
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-2">
         {accounts.map(account => {
           const accountTxs = transactions.filter(t => t.accountId === account.id && t.completed);
           const income = accountTxs.filter(t => t.type === 'income' || (t.type === 'transfer' && t.amount > 0)).reduce((sum, t) => sum + t.amount, 0);
@@ -159,48 +160,73 @@ export function AccountsView({ accounts, transactions, onAdd, onUpdate, onDelete
           const balance = account.initialBalance + income - expense;
           
           const balanceStr = balance.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-          const isLargeAmount = balanceStr.length > 12;
 
           return (
-            <div key={account.id} className="bg-white p-4 md:p-5 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 group flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-4 flex-1 min-w-0">
-                <div className="w-12 h-12 md:w-14 md:h-14 bg-blue-50/80 text-blue-600 rounded-2xl flex items-center justify-center shadow-sm border border-blue-100/50 shrink-0">
-                  {getIcon(account.type)}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h3 className="text-base md:text-lg font-bold text-gray-900 tracking-tight font-sans truncate leading-tight" title={account.name}>{account.name}</h3>
-                  <p className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-widest truncate mt-0.5">{accountTypeMap[account.type] || account.type}</p>
-                </div>
-              </div>
-
-              <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-2 sm:gap-0 px-1 sm:px-4 border-y sm:border-y-0 sm:border-x border-gray-50 py-3 sm:py-0">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block sm:hidden">Saldo</p>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-xs md:text-sm font-bold text-gray-400 font-mono">$</span>
-                  <p className={`font-bold text-gray-900 tracking-tighter font-mono ${isLargeAmount ? 'text-lg md:text-xl' : 'text-xl md:text-2xl'}`}>
-                    {balanceStr}
-                  </p>
-                  <span className="text-[10px] md:text-xs font-bold text-gray-400 ml-1 font-sans">ARS</span>
-                </div>
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5 hidden sm:block">Saldo Disponible</p>
-              </div>
-
-              <div className="flex items-center justify-end gap-1 shrink-0">
+            <div key={account.id} className="relative overflow-hidden group rounded-2xl border border-gray-100 shadow-sm">
+              {/* Background Actions (Revealed on Swipe) */}
+              <div className="absolute inset-0 flex justify-end items-stretch">
                 <button 
                   onClick={() => handleEdit(account)}
-                  className="p-2 text-gray-400 hover:text-blue-600 rounded-xl hover:bg-blue-50 transition-colors"
+                  className="w-14 bg-blue-500 text-white flex items-center justify-center transition-colors hover:bg-blue-600"
                 >
-                  <span className="sr-only">Editar</span>
-                  <Edit2 className="w-4 h-4 md:w-5 md:h-5" />
+                  <Edit2 className="w-4 h-4" />
                 </button>
                 <button 
                   onClick={() => setAccountToDelete(account)}
-                  className="p-2 text-gray-400 hover:text-red-600 rounded-xl hover:bg-red-50 transition-colors"
+                  className="w-14 bg-red-500 text-white flex items-center justify-center transition-colors hover:bg-red-600"
                 >
-                  <span className="sr-only">Eliminar</span>
-                  <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
+                  <Trash2 className="w-4 h-4" />
                 </button>
               </div>
+
+              {/* Draggable Content */}
+              <motion.div 
+                drag="x"
+                dragConstraints={{ left: -112, right: 0 }}
+                dragElastic={0.1}
+                className="relative bg-white p-3 flex items-center justify-between transition-colors group gap-3 z-10"
+              >
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div className="w-10 h-10 bg-blue-50/80 text-blue-600 rounded-xl flex items-center justify-center shadow-sm border border-blue-100/50 shrink-0">
+                    {React.cloneElement(getIcon(account.type) as React.ReactElement<{ className?: string }>, { className: 'w-5 h-5' })}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-sm font-bold text-gray-900 truncate leading-tight" title={account.name}>{account.name}</h3>
+                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest truncate mt-0.5">{accountTypeMap[account.type] || account.type}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 shrink-0">
+                  <div className="text-right">
+                    <div className="flex items-baseline justify-end gap-0.5">
+                      <span className="text-[10px] font-bold text-gray-400 font-mono">$</span>
+                      <p className="font-bold text-gray-900 tracking-tighter font-mono text-base">
+                        {balanceStr}
+                      </p>
+                    </div>
+                    <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">Saldo</p>
+                  </div>
+                  
+                  {/* Desktop Actions (Visible on Hover) */}
+                  <div className="hidden sm:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button 
+                      onClick={() => handleEdit(account)}
+                      className="p-1.5 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-blue-50"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button 
+                      onClick={() => setAccountToDelete(account)}
+                      className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  {/* Mobile Indicator (Swipe hint) */}
+                  <div className="sm:hidden w-1 h-5 bg-gray-50 rounded-full" />
+                </div>
+              </motion.div>
             </div>
           );
         })}

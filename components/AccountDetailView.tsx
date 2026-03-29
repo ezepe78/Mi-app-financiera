@@ -12,132 +12,149 @@ interface AccountDetailViewProps {
 }
 
 export function AccountDetailView({ account, transactions, categories, onBack }: AccountDetailViewProps) {
-  const accountTransactions = transactions
-    .filter(t => t.accountId === account.id)
-    .sort((a, b) => new Date(b.issueDate).getTime() - new Date(a.issueDate).getTime());
+  const { groups, stats } = React.useMemo(() => {
+    // 1. Filter and sort ascending to calculate running balance
+    const accountTxs = transactions.filter(t => t.accountId === account.id);
+    const sortedAsc = [...accountTxs].sort((a, b) => 
+      new Date(a.issueDate).getTime() - new Date(b.issueDate).getTime()
+    );
 
-  const income = accountTransactions
-    .filter(t => t.completed && (t.type === 'income' || (t.type === 'transfer' && t.amount > 0)))
-    .reduce((sum, t) => sum + t.amount, 0);
-  
-  const expense = accountTransactions
-    .filter(t => t.completed && (t.type === 'expense' || (t.type === 'transfer' && t.amount < 0)))
-    .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+    const balances: Record<string, number> = {};
+    const grouped: Record<string, Transaction[]> = {};
+    let runningBalance = account.initialBalance;
+    let totalIncome = 0;
+    let totalExpense = 0;
 
-  const currentBalance = account.initialBalance + income - expense;
-
-  // Group transactions by date
-  const groupedTransactions: { date: string; txs: Transaction[] }[] = [];
-  accountTransactions.forEach(tx => {
-    const dateStr = format(parseISO(tx.issueDate), 'yyyy-MM-dd');
-    const existingGroup = groupedTransactions.find(g => g.date === dateStr);
-    if (existingGroup) {
-      existingGroup.txs.push(tx);
-    } else {
-      groupedTransactions.push({ date: dateStr, txs: [tx] });
-    }
-  });
-
-  // Calculate daily balances
-  // To calculate the balance at the end of each day, we need to iterate from initial balance forward
-  const sortedAsc = [...accountTransactions].sort((a, b) => new Date(a.issueDate).getTime() - new Date(b.issueDate).getTime());
-  
-  const dailyBalances: Record<string, number> = {};
-  let runningBalance = account.initialBalance;
-  
-  // We need to know the balance at the end of each day that has transactions
-  const uniqueDates = Array.from(new Set(sortedAsc.map(t => format(parseISO(t.issueDate), 'yyyy-MM-dd')))).sort();
-  
-  uniqueDates.forEach(date => {
-    const dayTxs = sortedAsc.filter(t => format(parseISO(t.issueDate), 'yyyy-MM-dd') === date && t.completed);
-    dayTxs.forEach(tx => {
-      runningBalance += tx.amount;
+    sortedAsc.forEach(tx => {
+      if (tx.completed) {
+        runningBalance += tx.amount;
+        if (tx.type === 'income' || (tx.type === 'transfer' && tx.amount > 0)) {
+          totalIncome += tx.amount;
+        } else if (tx.type === 'expense' || (tx.type === 'transfer' && tx.amount < 0)) {
+          totalExpense += Math.abs(tx.amount);
+        }
+      }
+      const dateKey = format(parseISO(tx.issueDate), 'yyyy-MM-dd');
+      balances[dateKey] = runningBalance;
+      
+      if (!grouped[dateKey]) grouped[dateKey] = [];
+      grouped[dateKey].push(tx);
     });
-    dailyBalances[date] = runningBalance;
-  });
+
+    // 2. Convert to array and sort descending by date
+    const sortedGroups = Object.entries(grouped)
+      .map(([date, txs]) => ({
+        date,
+        txs: txs.sort((a, b) => new Date(b.issueDate).getTime() - new Date(a.issueDate).getTime()),
+        dailyBalance: balances[date]
+      }))
+      .sort((a, b) => b.date.localeCompare(a.date));
+
+    return { 
+      groups: sortedGroups, 
+      stats: { income: totalIncome, expense: totalExpense, currentBalance: runningBalance } 
+    };
+  }, [transactions, account.id, account.initialBalance]);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-50/50">
       {/* Header */}
-      <div className="sticky top-0 bg-white/80 backdrop-blur-md z-10 border-b border-gray-100">
+      <div className="sticky top-0 bg-white/80 backdrop-blur-xl z-30 border-b border-gray-100">
         <div className="max-w-2xl mx-auto px-4 h-16 flex items-center gap-4">
           <button 
             onClick={onBack}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-2 hover:bg-gray-100 rounded-full transition-all active:scale-90"
           >
             <ArrowLeft className="w-6 h-6 text-gray-600" />
           </button>
           <div className="flex-1 min-w-0">
-            <h1 className="text-lg font-bold text-gray-900 truncate">{account.name}</h1>
-            <p className="text-xs text-gray-500">Historial de movimientos</p>
+            <h1 className="text-lg font-bold text-gray-900 truncate tracking-tight">{account.name}</h1>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Detalle de Cuenta</p>
           </div>
         </div>
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-8">
         {/* Account Summary Card */}
-        <div className="bg-blue-600 rounded-3xl p-8 text-white mb-12 shadow-xl shadow-blue-600/20">
-          <p className="text-blue-100 text-sm font-medium mb-1">Saldo Actual</p>
-          <h2 className="text-4xl font-black mb-2">
-            ${currentBalance.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </h2>
-          <div className="flex gap-4 mt-6 pt-6 border-t border-white/10">
-            <div>
-              <p className="text-[10px] text-blue-200 font-bold uppercase tracking-widest">Ingresos</p>
-              <p className="text-lg font-bold">+${income.toLocaleString('es-AR')}</p>
-            </div>
-            <div className="w-px h-10 bg-white/10"></div>
-            <div>
-              <p className="text-[10px] text-blue-200 font-bold uppercase tracking-widest">Gastos</p>
-              <p className="text-lg font-bold">-${expense.toLocaleString('es-AR')}</p>
+        <div className="bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-sm mb-10 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50/50 rounded-full -mr-20 -mt-20 blur-3xl group-hover:bg-blue-100/50 transition-colors duration-700" />
+          
+          <div className="relative">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-2">Saldo Disponible</p>
+            <h2 className="text-4xl font-black text-gray-900 font-mono tracking-tighter">
+              ${stats.currentBalance.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              <span className="text-lg font-bold text-gray-300 ml-2 font-sans">ARS</span>
+            </h2>
+            
+            <div className="grid grid-cols-2 gap-4 mt-8 pt-8 border-t border-gray-50">
+              <div className="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100/50">
+                <p className="text-[9px] text-emerald-600 font-black uppercase tracking-widest mb-1">Ingresos</p>
+                <p className="text-lg font-bold text-emerald-700 font-mono">+${stats.income.toLocaleString('es-AR', { maximumFractionDigits: 0 })}</p>
+              </div>
+              <div className="bg-orange-50/50 p-4 rounded-2xl border border-orange-100/50">
+                <p className="text-[9px] text-orange-600 font-black uppercase tracking-widest mb-1">Gastos</p>
+                <p className="text-lg font-bold text-orange-700 font-mono">-${stats.expense.toLocaleString('es-AR', { maximumFractionDigits: 0 })}</p>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Timeline */}
-        <div className="space-y-8">
-          {groupedTransactions.length === 0 ? (
-            <div className="text-center py-20">
+        <div className="space-y-10">
+          {groups.length === 0 ? (
+            <div className="text-center py-24 bg-white rounded-[2.5rem] border border-gray-100 border-dashed">
               <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Clock className="w-8 h-8 text-gray-300" />
               </div>
-              <p className="text-gray-500 font-medium">No hay movimientos aún</p>
+              <p className="text-gray-400 font-medium">No se encontraron movimientos</p>
             </div>
           ) : (
-            groupedTransactions.map((group, groupIdx) => {
+            groups.map((group) => {
               const date = parseISO(group.date);
               const isToday = isSameDay(date, new Date());
-              const dateLabel = format(date, "d '•' EEEE", { locale: es }) + (isToday ? ' (hoy)' : '');
+              const dateLabel = format(date, "d 'de' MMMM", { locale: es });
+              const dayName = format(date, "EEEE", { locale: es });
 
               return (
                 <div key={group.date} className="relative">
-                  <h3 className="text-sm font-bold text-gray-400 mb-6 capitalize">{dateLabel}</h3>
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h3 className="text-sm font-black text-gray-900 capitalize">{isToday ? 'Hoy' : dayName}</h3>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{dateLabel}</p>
+                    </div>
+                    <div className="px-3 py-1.5 bg-blue-50 rounded-full border border-blue-100">
+                      <p className="text-[10px] font-bold text-blue-600 font-mono">
+                        Saldo: ${group.dailyBalance.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                  </div>
                   
-                  <div className="space-y-6 relative">
-                    {/* Vertical line connector */}
-                    <div className="absolute left-[19px] top-4 bottom-4 w-0.5 bg-gray-100 -z-10"></div>
-
-                    {group.txs.map((tx, txIdx) => {
+                  <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden divide-y divide-gray-50">
+                    {group.txs.map((tx) => {
                       const category = categories.find(c => c.id === tx.categoryId);
                       const isIncome = tx.type === 'income' || (tx.type === 'transfer' && tx.amount > 0);
                       
                       return (
-                        <div key={tx.id} className="flex items-center justify-between group">
+                        <div key={tx.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors group/item">
                           <div className="flex items-center gap-4">
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 z-0 ${
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover/item:scale-110 ${
                               isIncome ? 'bg-emerald-50 text-emerald-600' : 'bg-orange-50 text-orange-600'
                             }`}>
                               {isIncome ? <ArrowUpRight className="w-5 h-5" /> : <ArrowDownRight className="w-5 h-5" />}
                             </div>
                             <div className="min-w-0">
                               <p className="font-bold text-gray-900 text-sm truncate">{tx.description}</p>
-                              <p className="text-xs text-gray-500 truncate">
-                                {tx.type === 'transfer' ? 'Transferencia' : (category?.name || 'Sin categoría')}
-                              </p>
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
+                                  {tx.type === 'transfer' ? 'Transferencia' : (category?.name || 'General')}
+                                </span>
+                                <span className="text-[10px] text-gray-300">•</span>
+                                <span className="text-[10px] font-medium text-gray-400">{format(parseISO(tx.issueDate), 'HH:mm')}</span>
+                              </div>
                             </div>
                           </div>
                           <div className="text-right shrink-0">
-                            <p className={`font-bold text-sm ${isIncome ? 'text-emerald-600' : 'text-gray-900'}`}>
+                            <p className={`font-bold text-sm font-mono ${isIncome ? 'text-emerald-600' : 'text-gray-900'}`}>
                               {isIncome ? '+' : '-'}${Math.abs(tx.amount).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </p>
                             <div className="flex items-center justify-end gap-1 mt-0.5">
@@ -146,25 +163,14 @@ export function AccountDetailView({ account, transactions, categories, onBack }:
                               ) : (
                                 <Clock className="w-3 h-3 text-orange-500" />
                               )}
-                              <span className="text-[10px] text-gray-400">{format(parseISO(tx.issueDate), 'HH:mm')}</span>
+                              <span className={`text-[9px] font-bold uppercase tracking-tighter ${tx.completed ? 'text-emerald-600' : 'text-orange-600'}`}>
+                                {tx.completed ? 'Confirmado' : 'Pendiente'}
+                              </span>
                             </div>
                           </div>
                         </div>
                       );
                     })}
-
-                    {/* Daily Balance Row */}
-                    <div className="flex items-center justify-between pt-2">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 flex items-center justify-center">
-                          <div className="w-2.5 h-2.5 bg-blue-500 rounded-full shadow-sm shadow-blue-500/40"></div>
-                        </div>
-                        <p className="text-sm font-bold text-gray-900">Saldo</p>
-                      </div>
-                      <p className="text-sm font-bold text-gray-900">
-                        ${(dailyBalances[group.date] || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </p>
-                    </div>
                   </div>
                 </div>
               );

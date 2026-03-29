@@ -24,15 +24,15 @@ export function Sidebar({ currentView, setCurrentView }: SidebarProps) {
   ];
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-100 h-screen flex flex-col sticky top-0 hidden md:flex">
-      <div className="p-6 flex items-center gap-3">
-        <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
-          F
+    <aside className="w-72 bg-background border-r border-border h-screen flex flex-col sticky top-0 hidden md:flex">
+      <div className="p-8 flex items-center gap-4">
+        <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-2xl flex items-center justify-center text-white font-bold shadow-lg shadow-primary/20">
+          P
         </div>
-        <span className="text-xl font-bold text-gray-900">Finanzas</span>
+        <span className="text-2xl font-bold text-foreground tracking-tight">Payza</span>
       </div>
 
-      <nav className="flex-1 px-4 py-6 space-y-1">
+      <nav className="flex-1 px-6 py-8 space-y-2">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = currentView === item.id;
@@ -41,38 +41,38 @@ export function Sidebar({ currentView, setCurrentView }: SidebarProps) {
               key={item.id}
               onClick={() => setCurrentView(item.id as ViewType)}
               className={cn(
-                "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors",
+                "w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-bold transition-all duration-200 uppercase tracking-widest",
                 isActive 
-                  ? "bg-blue-50 text-blue-600" 
-                  : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+                  ? "bg-primary text-white shadow-xl shadow-primary/30" 
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
               )}
             >
-              <Icon className={cn("w-5 h-5", isActive ? "text-blue-600" : "text-gray-400")} />
+              <Icon className={cn("w-5 h-5", isActive ? "text-white" : "text-muted-foreground")} />
               {item.label}
             </button>
           );
         })}
       </nav>
 
-      <div className="p-4 border-t border-gray-100 space-y-1">
+      <div className="p-6 border-t border-border space-y-2">
         <button 
           onClick={() => setCurrentView('settings')}
           className={cn(
-            "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors",
+            "w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-bold transition-all duration-200 uppercase tracking-widest",
             currentView === 'settings'
-              ? "bg-blue-50 text-blue-600" 
-              : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+              ? "bg-primary text-white shadow-xl shadow-primary/30" 
+              : "text-muted-foreground hover:bg-muted hover:text-foreground"
           )}
         >
-          <Settings className={cn("w-5 h-5", currentView === 'settings' ? "text-blue-600" : "text-gray-400")} />
-          Configuración
+          <Settings className={cn("w-5 h-5", currentView === 'settings' ? "text-white" : "text-muted-foreground")} />
+          Ajustes
         </button>
         <button 
           onClick={logout}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 transition-colors"
+          className="w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-bold text-rose-500 hover:bg-rose-500/10 transition-all duration-200 uppercase tracking-widest"
         >
           <LogOut className="w-5 h-5" />
-          Cerrar Sesión
+          Salir
         </button>
       </div>
     </aside>

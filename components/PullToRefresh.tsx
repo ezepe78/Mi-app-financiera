@@ -61,12 +61,15 @@ export function PullToRefresh({ onRefresh, children, disabled = false }: PullToR
     setPullProgress(Math.min(currentY / PULL_THRESHOLD, 1));
   };
 
+  const yOffset = useTransform(y, (v) => v / 2);
+  const refreshY = REFRESH_HEIGHT / 2;
+
   return (
     <div className="relative w-full h-full overflow-hidden" ref={containerRef}>
       {/* Refresh Indicator */}
       <motion.div
         style={{ 
-          y: isRefreshing ? REFRESH_HEIGHT / 2 : useTransform(y, (v) => v / 2),
+          y: isRefreshing ? refreshY : yOffset,
           opacity,
           scale,
           rotate: isRefreshing ? undefined : rotate

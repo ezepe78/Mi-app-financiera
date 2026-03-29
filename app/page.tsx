@@ -172,6 +172,7 @@ export default function Home() {
           <AccountsView 
             accounts={accounts} 
             transactions={transactions}
+            categories={categories}
             onAdd={addAccount}
             onUpdate={updateAccount}
             onDelete={deleteAccount}

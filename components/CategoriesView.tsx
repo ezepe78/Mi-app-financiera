@@ -117,74 +117,74 @@ export function CategoriesView({ categories, transactions, onAdd, onUpdate, onDe
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="space-y-8">
         <div>
-          <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <ArrowDownRight className="w-6 h-6 text-red-500" />
+          <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <ArrowDownRight className="w-5 h-5 text-red-500" />
             Gastos
           </h2>
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="divide-y divide-gray-100">
-              {categories.filter(c => c.type === 'expense').map(category => (
-                <div key={category.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors group">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-red-50 text-red-600 flex items-center justify-center">
-                      <Tags className="w-5 h-5" />
-                    </div>
-                    <p className="font-bold text-gray-900">{category.name}</p>
-                  </div>
-                  <div className="flex items-center gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button 
-                      onClick={() => handleEdit(category)}
-                      className="p-2 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-blue-50"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button 
-                      onClick={() => setCategoryToDelete(category)}
-                      className="p-2 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            {categories.filter(c => c.type === 'expense').map(category => (
+              <div 
+                key={category.id} 
+                className="bg-white p-3 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all group relative flex flex-col items-center text-center gap-2"
+              >
+                <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center shrink-0">
+                  <Tags className="w-5 h-5" />
                 </div>
-              ))}
-            </div>
+                <p className="text-xs font-bold text-gray-900 truncate w-full">{category.name}</p>
+                
+                <div className="absolute top-1 right-1 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button 
+                    onClick={() => handleEdit(category)}
+                    className="p-1.5 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-blue-50"
+                  >
+                    <Edit2 className="w-3 h-3" />
+                  </button>
+                  <button 
+                    onClick={() => setCategoryToDelete(category)}
+                    className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
         <div>
-          <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <ArrowUpRight className="w-6 h-6 text-emerald-500" />
+          <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <ArrowUpRight className="w-5 h-5 text-emerald-500" />
             Ingresos
           </h2>
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="divide-y divide-gray-100">
-              {categories.filter(c => c.type === 'income').map(category => (
-                <div key={category.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors group">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                      <Tags className="w-5 h-5" />
-                    </div>
-                    <p className="font-bold text-gray-900">{category.name}</p>
-                  </div>
-                  <div className="flex items-center gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button 
-                      onClick={() => handleEdit(category)}
-                      className="p-2 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-blue-50"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button 
-                      onClick={() => setCategoryToDelete(category)}
-                      className="p-2 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            {categories.filter(c => c.type === 'income').map(category => (
+              <div 
+                key={category.id} 
+                className="bg-white p-3 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all group relative flex flex-col items-center text-center gap-2"
+              >
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                  <Tags className="w-5 h-5" />
                 </div>
-              ))}
-            </div>
+                <p className="text-xs font-bold text-gray-900 truncate w-full">{category.name}</p>
+                
+                <div className="absolute top-1 right-1 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button 
+                    onClick={() => handleEdit(category)}
+                    className="p-1.5 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-blue-50"
+                  >
+                    <Edit2 className="w-3 h-3" />
+                  </button>
+                  <button 
+                    onClick={() => setCategoryToDelete(category)}
+                    className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>

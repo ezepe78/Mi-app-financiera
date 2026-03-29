@@ -43,10 +43,10 @@ export function MonthlyEconomyCard({ transactions, categories, accounts, current
   const detailTransactions = monthlyTxs.filter(t => t.type === showDetails);
 
   return (
-    <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm mb-8">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-        <div className="flex flex-col items-center">
-          <div className="relative w-[100px] h-[100px] md:w-[120px] md:h-[120px] mb-4">
+    <div className="bg-white p-4 md:p-6 rounded-2xl border border-gray-100 shadow-sm mb-6 md:mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8 items-center">
+        <div className="flex flex-row lg:flex-col items-center justify-around lg:justify-center gap-4">
+          <div className="relative w-[80px] h-[80px] md:w-[120px] md:h-[120px]">
             <svg width="100%" height="100%" viewBox={`0 0 ${size} ${size}`} className="transform -rotate-90">
               <circle
                 cx={size / 2}
@@ -70,46 +70,46 @@ export function MonthlyEconomyCard({ transactions, categories, accounts, current
               />
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-2xl font-mono font-bold text-gray-700">{savingsPercentage}%</span>
+              <span className="text-lg md:text-2xl font-mono font-bold text-gray-700">{savingsPercentage}%</span>
             </div>
           </div>
-          <div className="text-center">
-            <p className="text-2xl font-mono font-bold text-emerald-600">
-              ${savedAmount.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ARS
+          <div className="text-left lg:text-center">
+            <p className="text-lg md:text-2xl font-mono font-bold text-emerald-600">
+              ${savedAmount.toLocaleString('es-AR', { maximumFractionDigits: 0 })}
             </p>
-            <p className="text-sm text-gray-500">Importe ahorrado</p>
+            <p className="text-[10px] md:text-sm text-gray-500 uppercase tracking-wider font-bold">Ahorro</p>
           </div>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-2 md:space-y-4">
           <div 
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowDetails('income'); }}
-            className="w-full flex items-center justify-between p-3 hover:bg-gray-50 rounded-xl transition-colors group cursor-pointer"
+            className="w-full flex items-center justify-between p-2 md:p-3 hover:bg-gray-50 rounded-xl transition-colors group cursor-pointer border border-gray-50 md:border-transparent"
             role="button"
             tabIndex={0}
           >
             <div className="text-left">
-              <p className="text-sm text-gray-500">Ingresos considerados</p>
-              <p className="text-xl font-mono font-bold text-emerald-600">
-                ${totalIncome.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ARS
+              <p className="text-[10px] md:text-sm text-gray-500">Ingresos</p>
+              <p className="text-sm md:text-xl font-mono font-bold text-emerald-600">
+                ${totalIncome.toLocaleString('es-AR', { maximumFractionDigits: 0 })}
               </p>
             </div>
-            <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-emerald-500 transition-colors" />
+            <ArrowRight className="w-4 h-4 md:w-5 md:h-5 text-gray-400 group-hover:text-emerald-500 transition-colors" />
           </div>
 
           <div 
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowDetails('expense'); }}
-            className="w-full flex items-center justify-between p-3 hover:bg-gray-50 rounded-xl transition-colors group cursor-pointer"
+            className="w-full flex items-center justify-between p-2 md:p-3 hover:bg-gray-50 rounded-xl transition-colors group cursor-pointer border border-gray-50 md:border-transparent"
             role="button"
             tabIndex={0}
           >
             <div className="text-left">
-              <p className="text-sm text-gray-500">Gastos considerados</p>
-              <p className="text-xl font-mono font-bold text-red-500">
-                ${totalExpense.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ARS
+              <p className="text-[10px] md:text-sm text-gray-500">Gastos</p>
+              <p className="text-sm md:text-xl font-mono font-bold text-red-500">
+                ${totalExpense.toLocaleString('es-AR', { maximumFractionDigits: 0 })}
               </p>
             </div>
-            <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-red-500 transition-colors" />
+            <ArrowRight className="w-4 h-4 md:w-5 md:h-5 text-gray-400 group-hover:text-red-500 transition-colors" />
           </div>
         </div>
       </div>
